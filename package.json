@@ -1,0 +1,49 @@
+{
+  "name": "gestor-inventario",
+  "version": "1.0.0",
+  "description": "Gestor de Inventario de Alimentos",
+  "main": "main.js",
+  "author": "Kevin Cristensen",
+  "license": "MIT",
+  "scripts": {
+    "ng": "cd angular-app && ng",
+    "start:angular": "cd angular-app && ng serve",
+    "start:electron": "electron .",
+    "start": "npm run start:angular & npm run start:electron",
+    "build:angular": "cd angular-app && ng build --configuration production",
+    "package": "npm run build:angular && electron-builder",
+    "publish": "npm run build:angular && electron-builder --publish always"
+  },
+  "dependencies": {
+    "electron-updater": "^6.2.1"
+  },
+  "devDependencies": {
+    "electron": "^31.1.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.tuempresa.gestorinventario",
+    "productName": "Gestor de Inventario",
+    "directories": {
+      "output": "release",
+      "app": "."
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "node_modules/",
+      "angular-app/dist/**"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "KevCristensen",
+      "repo": "gestor-inventario-app"
+    }
+  }
+}
