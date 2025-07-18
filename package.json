@@ -9,21 +9,25 @@
     "ng": "cd angular-app && ng",
     "start:angular": "cd angular-app && ng serve",
     "start:electron": "electron .",
-    "start": "npm run start:angular & npm run start:electron",
+    "start": "concurrently \"npm run start:angular\" \"wait-on http://localhost:4200 && npm run start:electron\"",
     "build:angular": "cd angular-app && ng build --configuration production",
     "package": "npm run build:angular && electron-builder",
     "publish": "npm run build:angular && electron-builder --publish always"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "electron-updater": "^6.2.1",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.14.2"
   },
   "devDependencies": {
+    "concurrently": "^9.2.0",
     "electron": "^31.1.0",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "wait-on": "^8.0.3"
   },
   "build": {
     "appId": "com.tuempresa.gestorinventario",

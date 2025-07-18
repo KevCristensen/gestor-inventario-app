@@ -5,10 +5,14 @@ const { autoUpdater } = require('electron-updater');
 // --- Dependencias del Backend ---
 const express = require('express');
 const cors = require('cors'); 
-const mysql = require('mysql2/promise');
-require('dotenv').config();
+// Ya no necesitas 'mysql2' ni 'dotenv' aquí, porque se manejan en db.js
+
+// --- Importar rutas del backend ---
+const providersRoutes = require('./backend/routes/providers.routes'); 
+const productsRoutes = require('./backend/routes/products.routes'); 
 
 let mainWindow;
+
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -36,32 +40,16 @@ function createWindow() {
 // --- Función para iniciar el servidor Backend ---
 async function startServer() {
     const backendApp = express();
-    backendApp.use(cors()); // Habilita CORS para todas las rutas
+    backendApp.use(cors());
     backendApp.use(express.json());
 
-    // Configuración de la conexión a la base de datos
-    const dbPool = mysql.createPool({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_DATABASE,
-        waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0
-    });
-
-    // Endpoint de prueba para verificar la conexión
-    backendApp.get('/api/test-db', async (req, res) => {
-        try {
-            const [rows] = await dbPool.query('SELECT "Conexión Exitosa" as message');
-            res.json(rows[0]);
-        } catch (error) {
-            console.error('Error al conectar a la DB:', error);
-            res.status(500).json({ error: 'Error de base de datos' });
-        }
-    });
-
-    // --- Aquí irán todos tus futuros endpoints (login, productos, etc.) ---
+    // --- Endpoints de la API ---
+    // Simplemente "usamos" los módulos de rutas que hemos creado
+    backendApp.use('/api/providers', providersRoutes);
+    backendApp.use('/api/products', productsRoutes);
+    // Más adelante añadiremos más:
+    // backendApp.use('/api/products', productsRoutes);
+    // backendApp.use('/api/auth', authRoutes);
 
     const PORT = 3000;
     backendApp.listen(PORT, () => {
@@ -69,12 +57,14 @@ async function startServer() {
     });
 }
 
-
 app.on('ready', () => {
     createWindow();
-    startServer(); // <-- Inicia el backend cuando la app está lista
+    startServer();
     autoUpdater.checkForUpdatesAndNotify();
 });
+
+
+
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
