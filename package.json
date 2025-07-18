@@ -15,7 +15,11 @@
     "publish": "npm run build:angular && electron-builder --publish always"
   },
   "dependencies": {
-    "electron-updater": "^6.2.1"
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "electron-updater": "^6.2.1",
+    "express": "^5.1.0",
+    "mysql2": "^3.14.2"
   },
   "devDependencies": {
     "electron": "^31.1.0",

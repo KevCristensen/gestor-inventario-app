@@ -2,6 +2,12 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
+// --- Dependencias del Backend ---
+const express = require('express');
+const cors = require('cors'); 
+const mysql = require('mysql2/promise');
+require('dotenv').config();
+
 let mainWindow;
 
 function createWindow() {
@@ -9,44 +15,79 @@ function createWindow() {
         width: 1200,
         height: 800,
         webPreferences: {
-            nodeIntegration: false, // Es más seguro
-            contextIsolation: true, // Protege contra vulnerabilidades
-            preload: path.join(__dirname, 'preload.js') // Carga un script de puente
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload.js')
         }
     });
 
-    // En desarrollo, carga el servidor de Angular. En producción, carga el build.
     if (app.isPackaged) {
         mainWindow.loadFile(path.join(__dirname, 'angular-app/dist/angular-app/browser/index.html'));
     } else {
         mainWindow.loadURL('http://localhost:4200');
-        mainWindow.webContents.openDevTools(); // Abrir herramientas de desarrollador
+        mainWindow.webContents.openDevTools();
     }
 
-    mainWindow.on('closed', function () {
+    mainWindow.on('closed', () => {
         mainWindow = null;
     });
 }
 
+// --- Función para iniciar el servidor Backend ---
+async function startServer() {
+    const backendApp = express();
+    backendApp.use(cors()); // Habilita CORS para todas las rutas
+    backendApp.use(express.json());
+
+    // Configuración de la conexión a la base de datos
+    const dbPool = mysql.createPool({
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_DATABASE,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
+    });
+
+    // Endpoint de prueba para verificar la conexión
+    backendApp.get('/api/test-db', async (req, res) => {
+        try {
+            const [rows] = await dbPool.query('SELECT "Conexión Exitosa" as message');
+            res.json(rows[0]);
+        } catch (error) {
+            console.error('Error al conectar a la DB:', error);
+            res.status(500).json({ error: 'Error de base de datos' });
+        }
+    });
+
+    // --- Aquí irán todos tus futuros endpoints (login, productos, etc.) ---
+
+    const PORT = 3000;
+    backendApp.listen(PORT, () => {
+        console.log(`Servidor Express corriendo en http://localhost:${PORT}`);
+    });
+}
+
+
 app.on('ready', () => {
     createWindow();
-    // Una vez que la ventana está lista, busca actualizaciones
+    startServer(); // <-- Inicia el backend cuando la app está lista
     autoUpdater.checkForUpdatesAndNotify();
 });
 
-app.on('window-all-closed', function () {
+app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
     }
 });
 
-app.on('activate', function () {
+app.on('activate', () => {
     if (mainWindow === null) {
         createWindow();
     }
 });
 
-// Escucha un evento desde el renderer para obtener la versión de la app
 ipcMain.on('get-app-version', (event) => {
     event.sender.send('app-version', { version: app.getVersion() });
 });
