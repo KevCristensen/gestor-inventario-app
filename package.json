@@ -36,6 +36,13 @@
     "directories": {
       "output": "release"
     },
+    "files": [
+      "main.js",
+      "preload.js",
+      ".env",
+      "backend/**/*",
+      "dist/**/*"
+    ],
     "win": {
       "target": "nsis"
     },

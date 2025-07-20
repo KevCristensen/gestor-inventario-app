@@ -44,7 +44,7 @@ function createWindow() {
     if (app.isPackaged) {
         // Carga el index.html de Angular en producción
         mainWindow.loadURL(url.format({
-            pathname: path.join(__dirname, 'dist/angular-app/browser/index.html'),           
+            pathname: path.join(__dirname, 'dist/browser/index.html'),           
             protocol: 'file:',
             slashes: true
         }));
