@@ -1,6 +1,6 @@
 {
   "name": "gestor-inventario",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Gestor de Inventario de Alimentos",
   "main": "main.js",
   "author": "Kevin Cristensen",
