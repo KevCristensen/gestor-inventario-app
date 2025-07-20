@@ -34,15 +34,8 @@
     "appId": "com.tuempresa.gestorinventario",
     "productName": "Gestor de Inventario",
     "directories": {
-      "output": "release",
-      "app": "."
+      "output": "release"
     },
-    "files": [
-      "main.js",
-      "preload.js",
-      "node_modules/",
-      "angular-app/dist/**"
-    ],
     "win": {
       "target": "nsis"
     },
