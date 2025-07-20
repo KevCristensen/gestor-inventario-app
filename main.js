@@ -2,6 +2,8 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
+
+const url = require('url');
 // --- Dependencias del Backend ---
 const express = require('express');
 const cors = require('cors'); 
@@ -38,13 +40,22 @@ function createWindow() {
     });
 
     if (app.isPackaged) {
-        mainWindow.loadFile(path.join(__dirname, 'angular-app/dist/angular-app/browser/index.html'));
+        // Carga el index.html de Angular en producción
+        mainWindow.loadURL(url.format({
+            pathname: path.join(__dirname, 'angular-app/dist/angular-app/browser/index.html'),
+            protocol: 'file:',
+            slashes: true
+        }));
+        
+        // Para depurar la pantalla en blanco:
+        mainWindow.webContents.openDevTools(); 
     } else {
+        // Carga la URL de desarrollo de Angular
         mainWindow.loadURL('http://localhost:4200');
         mainWindow.webContents.openDevTools();
     }
 
-    mainWindow.on('closed', () => {
+    mainWindow.on('closed', function () {
         mainWindow = null;
     });
 }
