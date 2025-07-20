@@ -10,7 +10,7 @@
     "start:angular": "cd angular-app && ng serve",
     "start:electron": "electron .",
     "start": "concurrently \"npm run start:angular\" \"wait-on http://localhost:4200 && npm run start:electron\"",
-    "build:angular": "cd angular-app && ng build --configuration production",
+    "build:angular": "ng build --project=angular-app --configuration=production",
     "package": "npm run build:angular && electron-builder",
     "publish": "npm run build:angular && electron-builder --publish always"
   },
