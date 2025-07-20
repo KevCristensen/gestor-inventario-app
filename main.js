@@ -33,7 +33,7 @@ function createWindow() {
         width: 1200,
         height: 800,
         webPreferences: {
-            webSecurity: false, // Desactiva la seguridad web para permitir cargar archivos locales
+            webSecurity: false,
             nodeIntegration: false,
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
@@ -43,7 +43,7 @@ function createWindow() {
     if (app.isPackaged) {
         // Carga el index.html de Angular en producción
         mainWindow.loadURL(url.format({
-            pathname: path.join(__dirname, 'angular-app/dist/angular-app/browser/index.html'),
+            pathname: path.join(__dirname, 'angular-app/browser/index.html'),
             protocol: 'file:',
             slashes: true
         }));
