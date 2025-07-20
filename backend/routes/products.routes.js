@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const dbPool = require('../db');
 
-// CREAR un nuevo producto
 router.post('/', async (req, res) => {
     try {
         const {
@@ -22,12 +21,11 @@ router.post('/', async (req, res) => {
         );
         res.status(201).json({ id: result.insertId, ...req.body });
     } catch (error) {
-        console.error("Error al crear producto:", error); // Loguea el error detallado en la terminal del backend
+        console.error("Error al crear producto:", error); 
         res.status(500).json({ error: 'Error al crear el producto.', details: error.message });
     }
 });
 
-// LEER todos los productos
 router.get('/', async (req, res) => {
     try {
         const [products] = await dbPool.query('SELECT * FROM products');
