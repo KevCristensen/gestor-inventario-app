@@ -58,4 +58,15 @@ router.put('/:id', async (req, res) => {
     }
 });
 
+// ELIMINAR un proveedor
+router.delete('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await dbPool.query('DELETE FROM providers WHERE id = ?', [id]);
+        res.sendStatus(204); // 204 significa "No Content", la operación fue exitosa
+    } catch (error) {
+        res.status(500).json({ error: 'Error al eliminar el proveedor.' });
+    }
+});
+
 module.exports = router;

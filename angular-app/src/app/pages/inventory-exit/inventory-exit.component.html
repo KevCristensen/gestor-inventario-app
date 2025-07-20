@@ -1,0 +1,49 @@
+<div class="text-white">
+    <h1 class="text-3xl font-bold mb-6">Registrar Salida de Inventario</h1>
+  
+    <div class="bg-gray-800 rounded-lg shadow p-6 mb-6">
+      <label for="notes" class="block mb-2 text-sm font-medium text-gray-300">Motivo de la Salida (Ej: Consumo diario, Despacho, etc.)</label>
+      <input type="text" id="notes" [(ngModel)]="exitData.notes" name="notes" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+    </div>
+  
+    <div class="bg-gray-800 rounded-lg shadow p-6 mb-6">
+      <label for="barcode-scanner" class="block mb-2 text-lg font-medium text-gray-300">Escanear Producto a Retirar</label>
+      <input 
+        type="text" 
+        id="barcode-scanner"
+        #barcodeInput
+        placeholder="Esperando código..."
+        (keyup.enter)="onBarcodeScanned(barcodeInput.value); barcodeInput.value = ''"
+        class="w-full p-4 text-xl bg-gray-700 rounded-lg border border-gray-600"
+      >
+    </div>
+  
+    <div class="bg-gray-800 rounded-lg shadow p-6">
+      <h2 class="text-2xl font-bold mb-4">Items a Retirar</h2>
+      <table class="w-full text-left">
+        <thead>
+          <tr class="border-b border-gray-600">
+            <th class="p-2 w-3/5">Producto</th>
+            <th class="p-2 w-1/5">Cantidad</th>
+            <th class="p-2 w-1/5">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(item of exitData.items; track item.product_id) {
+            <tr class="border-b border-gray-700">
+              <td class="p-2">{{ item.name }}</td>
+              <td class="p-2"><input type="number" [(ngModel)]="item.quantity" class="w-24 bg-gray-700 p-1 rounded"></td>
+              <td class="p-2"><button (click)="removeItem(item.product_id)" class="text-red-400 hover:text-red-300">Quitar</button></td>
+            </tr>
+          } @empty {
+            <tr><td colspan="3" class="p-4 text-center text-gray-500">Aún no se han escaneado productos.</td></tr>
+          }
+        </tbody>
+      </table>
+      <div class="flex justify-end mt-6">
+        <button (click)="saveExit()" [disabled]="exitData.items.length === 0" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500">
+          Confirmar Salida
+        </button>
+      </div>
+    </div>
+  </div>

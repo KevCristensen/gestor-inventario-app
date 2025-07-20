@@ -7,7 +7,7 @@ router.post('/', async (req, res) => {
     try {
         const {
             barcode, name, description, unit_of_measure,
-            category, brand, weight, created_by
+            category, brand, weight, created_by, min_stock_level
         } = req.body;
 
         if (!barcode || !name) {
@@ -15,12 +15,14 @@ router.post('/', async (req, res) => {
         }
 
         const [result] = await dbPool.query(
-            `INSERT INTO products (barcode, name, description, unit_of_measure, category, brand, weight, created_by, updated_by)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [barcode, name, description, unit_of_measure, category, brand, weight, created_by, created_by]
+            `INSERT INTO products 
+             (barcode, name, description, unit_of_measure, category, brand, weight, created_by, updated_by, min_stock_level)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [barcode, name, description, unit_of_measure, category, brand, weight, created_by, created_by, min_stock_level]
         );
         res.status(201).json({ id: result.insertId, ...req.body });
     } catch (error) {
+        console.error("Error al crear producto:", error); // Loguea el error detallado en la terminal del backend
         res.status(500).json({ error: 'Error al crear el producto.', details: error.message });
     }
 });
@@ -35,7 +37,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// LEER un producto por código de barras (para el escáner)
+// LEER un producto por código de barras
 router.get('/barcode/:barcode', async (req, res) => {
     try {
         const { barcode } = req.params;
@@ -55,17 +57,31 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         const {
             name, description, unit_of_measure, category,
-            brand, weight, updated_by
+            brand, weight, updated_by, min_stock_level
         } = req.body;
         
         await dbPool.query(
-            `UPDATE products SET name = ?, description = ?, unit_of_measure = ?, category = ?, 
-             brand = ?, weight = ?, updated_by = ? WHERE id = ?`,
-            [name, description, unit_of_measure, category, brand, weight, updated_by, id]
+            `UPDATE products SET 
+             name = ?, description = ?, unit_of_measure = ?, category = ?, 
+             brand = ?, weight = ?, updated_by = ?, min_stock_level = ? 
+             WHERE id = ?`,
+            [name, description, unit_of_measure, category, brand, weight, updated_by, min_stock_level, id]
         );
         res.json({ message: 'Producto actualizado exitosamente.' });
     } catch (error) {
+        console.error("Error al actualizar producto:", error); // Loguea el error detallado
         res.status(500).json({ error: 'Error al actualizar el producto.', details: error.message });
+    }
+});
+
+// ELIMINAR un producto
+router.delete('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await dbPool.query('DELETE FROM products WHERE id = ?', [id]);
+        res.sendStatus(204);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al eliminar el producto.' });
     }
 });
 

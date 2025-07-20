@@ -1,0 +1,60 @@
+<div class="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50">
+    <div class="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-2xl text-white transform transition-all duration-300">
+      <h2 class="text-2xl font-bold mb-6">{{ product.id ? 'Editar' : 'Crear' }} Producto</h2>
+  
+      <form (ngSubmit)="onSubmit()">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          
+          <div class="col-span-2">
+            <label for="barcode" class="block mb-2 text-sm font-medium text-gray-300">Código de Barras</label>
+            <input type="text" id="barcode" [(ngModel)]="product.barcode" name="barcode" required class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+          </div>
+          <div class="col-span-2">
+            <label for="name" class="block mb-2 text-sm font-medium text-gray-300">Nombre</label>
+            <input type="text" id="name" [(ngModel)]="product.name" name="name" required class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+          </div>
+  
+          <div>
+            <label for="category" class="block mb-2 text-sm font-medium text-gray-300">Categoría</label>
+            <select id="category" [(ngModel)]="product.category" name="category" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+              @for (cat of categories; track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label for="brand" class="block mb-2 text-sm font-medium text-gray-300">Marca</label>
+            <input type="text" id="brand" [(ngModel)]="product.brand" name="brand" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+          </div>
+          
+          <div>
+            <label for="unit_of_measure" class="block mb-2 text-sm font-medium text-gray-300">Unidad de Medida</label>
+            <select id="unit_of_measure" [(ngModel)]="product.unit_of_measure" name="unit_of_measure" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+              @for (unit of units; track unit) {
+                <option [value]="unit">{{ unit }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label for="weight" class="block mb-2 text-sm font-medium text-gray-300">Peso</label>
+            <input type="number" id="weight" [(ngModel)]="product.weight" name="weight" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+          </div>
+          
+          <div class="col-span-2">
+            <label for="description" class="block mb-2 text-sm font-medium text-gray-300">Descripción</label>
+            <textarea id="description" [(ngModel)]="product.description" name="description" rows="3" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600"></textarea>
+          </div>
+
+          <div>
+            <label for="min_stock_level" class="block mb-2 text-sm font-medium text-gray-300">Stock Mínimo de Alerta</label>
+            <input type="number" id="min_stock_level" [(ngModel)]="product.min_stock_level" name="min_stock_level" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+          </div>
+        </div>
+  
+        <div class="flex justify-end mt-8 space-x-4">
+          <button type="button" (click)="close.emit()" class="px-5 py-2.5 rounded-lg bg-gray-600 hover:bg-gray-500 font-medium">Cancelar</button>
+          <button type="submit" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 font-medium">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
