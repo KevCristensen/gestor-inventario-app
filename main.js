@@ -33,6 +33,7 @@ function createWindow() {
         width: 1200,
         height: 800,
         webPreferences: {
+            webSecurity: false, // Desactiva la seguridad web para permitir cargar archivos locales
             nodeIntegration: false,
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
