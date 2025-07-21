@@ -25,6 +25,7 @@
     const entitiesRoutes = require('./backend/routes/entities.routes'); 
 
     let mainWindow;
+    const PORT = 3000;
 
     function createWindow() {
         mainWindow = new BrowserWindow({
@@ -39,31 +40,20 @@
         });
     
         const startURL = app.isPackaged
-            ? url.format({
-                pathname: path.join(__dirname, 'dist/browser/index.html'),
-                protocol: 'file:',
-                slashes: true
-              })
-            : 'http://localhost:4200';
-    
+            ? `http://localhost:${PORT}` // En producción, apunta a nuestro propio servidor
+            : 'http://localhost:4200'; // En desarrollo, apunta al servidor de Angular
+
         mainWindow.loadURL(startURL);
     
         if (!app.isPackaged) {
             mainWindow.webContents.openDevTools();
         }
     
-        mainWindow.on('closed', function () {
+        mainWindow.on('closed', () => {
             mainWindow = null;
         });
     
-        // --- AÑADE ESTE BLOQUE DE CÓDIGO ---
-        // Intercepta el comando de recarga para evitar el error.
-        mainWindow.webContents.on('before-input-event', (event, input) => {
-            if (input.key.toLowerCase() === 'r' && (input.control || input.meta)) {
-                mainWindow.loadURL(startURL);
-                event.preventDefault();
-            }
-        });
+       
     }
 
     // --- Tu función startServer no necesita cambios ---
@@ -71,6 +61,12 @@
         const backendApp = express();
         backendApp.use(cors());
         backendApp.use(express.json());
+    
+        // --- SIRVE LOS ARCHIVOS DE ANGULAR EN PRODUCCIÓN ---
+        if (app.isPackaged) {
+            const angularAppPath = path.join(__dirname, 'dist/browser');
+            backendApp.use(express.static(angularAppPath));
+        }
         
         backendApp.use('/api/providers', isAdmin, providersRoutes);
         backendApp.use('/api/products', isAdmin, productsRoutes);
@@ -81,15 +77,25 @@
         backendApp.use('/api/reports', reportsRoutes); 
         backendApp.use('/api/entities', entitiesRoutes);
 
-        const PORT = 3000;
+        
+
+        // --- RUTA FALLBACK ---
+        // Si la app está empaquetada, cualquier ruta que no sea de la API debe servir el index.html
+        if (app.isPackaged) {
+            backendApp.get('*', (req, res) => {
+                res.sendFile(path.join(__dirname, 'dist/browser/index.html'));
+            });
+        }
+
         backendApp.listen(PORT, () => {
             console.log(`Servidor Express corriendo en http://localhost:${PORT}`);
         });
     }
 
-    app.on('ready', () => {
+    app.on('ready', async () => {
+        // Es importante iniciar el servidor ANTES de crear la ventana en producción
+        await startServer();
         createWindow();
-        startServer();
         autoUpdater.checkForUpdatesAndNotify();
     });
 
