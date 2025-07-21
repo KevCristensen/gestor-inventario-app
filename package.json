@@ -1,6 +1,6 @@
 {
   "name": "gestor-inventario",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Gestor de Inventario de Alimentos",
   "main": "main.js",
   "author": "Kevin Cristensen",
@@ -48,7 +48,8 @@
       "target": "nsis"
     },
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "identity": null
     },
     "publish": {
       "provider": "github",
