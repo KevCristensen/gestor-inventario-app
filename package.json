@@ -1,6 +1,6 @@
 {
   "name": "gestor-inventario",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Gestor de Inventario de Alimentos",
   "main": "main.js",
   "author": "Kevin Cristensen (KC Smart Systems)",
@@ -44,7 +44,9 @@
       "preload.js",
       ".env",
       "backend/**/*",
-      "dist/**/*"
+      "dist/**/*",
+      "release-notes.json",
+      "receipt-template.html"
     ],
     "win": {
       "target": "nsis"
