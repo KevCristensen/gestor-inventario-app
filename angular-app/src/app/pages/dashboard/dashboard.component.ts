@@ -11,6 +11,7 @@ import { DashboardService } from '../../services/dashboard.service';
 export class DashboardComponent implements OnInit {
   groupedLowStockItems: { [key: string]: any[] } = {};
   sortConfig = { key: 'current_stock', direction: 'asc' };
+  summary: any = { products: 0, providers: 0 }; // <-- 1. Propiedad para el resumen
 
   constructor(
     private dashboardService: DashboardService,
@@ -19,6 +20,12 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAlerts();
+
+    // 2. Añade la llamada para cargar el resumen
+    this.dashboardService.getSummary().subscribe(data => {
+      this.summary = data;
+      this.cdr.detectChanges();
+    });
   }
 
   loadAlerts(): void {

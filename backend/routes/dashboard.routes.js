@@ -54,5 +54,18 @@ router.get('/global-inventory', async (req, res) => {
         res.status(500).json({ error: 'Error al obtener inventario global.' });
     }
 });
+router.get('/summary', async (req, res) => {
+    try {
+        const [[productsCount]] = await dbPool.query("SELECT COUNT(*) as total FROM products");
+        const [[providersCount]] = await dbPool.query("SELECT COUNT(*) as total FROM providers");
+
+        res.json({
+            products: productsCount.total,
+            providers: providersCount.total
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener el resumen.' });
+    }
+});
 
 module.exports = router;

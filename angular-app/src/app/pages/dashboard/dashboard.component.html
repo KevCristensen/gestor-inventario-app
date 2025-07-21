@@ -1,45 +1,56 @@
 <div class="text-white">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold">Dashboard</h1>
-      
-      <div class="flex items-center space-x-2 text-sm">
-        <span class="text-gray-400">Ordenar por:</span>
-        <button (click)="setSort('name')" 
-                [class.text-blue-400]="sortConfig.key === 'name'"
-                class="hover:text-white font-semibold">
-          Nombre
-        </button>
-        <button (click)="setSort('current_stock')" 
-                [class.text-blue-400]="sortConfig.key === 'current_stock'"
-                class="hover:text-white font-semibold">
-          Stock
-        </button>
-      </div>
-    </div>
-  
-    <div class="space-y-8">
-      @for (entityName of getObjectKeys(groupedLowStockItems); track entityName) {
-        <div class="bg-gray-800 rounded-lg shadow p-6">
-          <h2 class="text-2xl font-bold mb-4 text-yellow-400">
-            Alertas de Stock Bajo - {{ entityName }}
-          </h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @for (item of groupedLowStockItems[entityName]; track item.id) {
-              <div class="bg-gray-700 p-4 rounded-lg border-l-4 border-yellow-500">
-                <p class="font-bold text-lg">{{ item.name }}</p>
-                <p class="text-sm text-gray-400">{{ item.barcode }}</p>
-                <div class="mt-4 text-center">
-                  <span class="text-3xl font-bold text-red-500">{{ item.current_stock }}</span>
-                  <span class="text-gray-400">/ {{ item.min_stock_level }} (mínimo)</span>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-      } @empty {
-        <div class="bg-gray-800 rounded-lg shadow p-8 text-center text-gray-400">
-          No hay productos con stock bajo. ¡Buen trabajo!
-        </div>
-      }
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Dashboard</h1>
+    
+    <div class="flex items-center space-x-2 text-sm">
+      <span class="text-gray-400">Ordenar por:</span>
+      <button (click)="setSort('name')" 
+              [class.text-blue-400]="sortConfig.key === 'name'"
+              class="hover:text-white font-semibold">
+        Nombre
+      </button>
+      <button (click)="setSort('current_stock')" 
+              [class.text-blue-400]="sortConfig.key === 'current_stock'"
+              class="hover:text-white font-semibold">
+        Stock
+      </button>
     </div>
   </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-gray-800 p-6 rounded-lg shadow">
+      <h3 class="text-gray-400 text-sm font-medium">Total de Productos</h3>
+      <p class="text-3xl font-bold mt-2">{{ summary.products }}</p>
+    </div>
+    <div class="bg-gray-800 p-6 rounded-lg shadow">
+      <h3 class="text-gray-400 text-sm font-medium">Total de Proveedores</h3>
+      <p class="text-3xl font-bold mt-2">{{ summary.providers }}</p>
+    </div>
+  </div>
+
+  <div class="space-y-8">
+    @for (entityName of getObjectKeys(groupedLowStockItems); track entityName) {
+      <div class="bg-gray-800 rounded-lg shadow p-6">
+        <h2 class="text-2xl font-bold mb-4 text-yellow-400">
+          Alertas de Stock Bajo - {{ entityName }}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          @for (item of groupedLowStockItems[entityName]; track item.id) {
+            <div class="bg-gray-700 p-4 rounded-lg border-l-4 border-yellow-500">
+              <p class="font-bold text-lg">{{ item.name }}</p>
+              <p class="text-sm text-gray-400">{{ item.barcode }}</p>
+              <div class="mt-4 text-center">
+                <span class="text-3xl font-bold text-red-500">{{ item.current_stock }}</span>
+                <span class="text-gray-400">/ {{ item.min_stock_level }} (mínimo)</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    } @empty {
+      <div class="bg-gray-800 rounded-lg shadow p-8 text-center text-gray-400">
+        No hay productos con stock bajo. ¡Buen trabajo!
+      </div>
+    }
+  </div>
+</div>

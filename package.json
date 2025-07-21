@@ -3,7 +3,7 @@
   "version": "1.0.3",
   "description": "Gestor de Inventario de Alimentos",
   "main": "main.js",
-  "author": "Kevin Cristensen",
+  "author": "Kevin Cristensen (KC Smart Systems)",
   "license": "MIT",
   "scripts": {
     "ng": "cd angular-app && ng",
@@ -32,7 +32,8 @@
     "wait-on": "^8.0.3"
   },
   "build": {
-    "appId": "com.tuempresa.gestorinventario",
+    "copyright": "Copyright © 2025 KC Smart Systems",
+    "appId": "com.kcsmartsystems.gestorinventario",
     "productName": "Gestor de Inventario",
     "directories": {
       "output": "release"

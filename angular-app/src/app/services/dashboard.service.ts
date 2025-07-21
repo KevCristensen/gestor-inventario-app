@@ -18,4 +18,8 @@ export class DashboardService {
     return this.http.get<any[]>(`${this.apiUrl}/global-inventory`);
   }
 
+  getSummary(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/summary`);
+  }
+
 }
