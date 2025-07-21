@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service'; 
+import { NotificationService } from '../../services/notification.service'; 
 
 @Component({
   selector: 'app-login',
@@ -21,6 +22,7 @@ export class LoginComponent {
   constructor(
     private authService: AuthService,
     private router: Router,
+    private notificationService: NotificationService
   ) {}
 
   onLogin() {
@@ -34,14 +36,15 @@ export class LoginComponent {
     this.authService.login(this.credentials).subscribe({
       next: (response) => {
         console.log('Login exitoso!', response);
-        alert('Login exitoso!');
+        this.notificationService.showSuccess('Login exitoso!');
         // 3. Navega al dashboard
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         // Si hay un error (ej. credenciales inválidas)
         console.error('Error en el login:', err);
-        this.errorMessage = err.error?.message || 'Ocurrió un error inesperado.';
+        const errorMessage = err.error?.error || 'Ocurrió un error inesperado.';
+        this.notificationService.showError(errorMessage);
       }
     });
   }

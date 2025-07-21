@@ -6,6 +6,7 @@ import { ProvidersService } from '../../services/providers.service';
 import { ProductsService } from '../../services/products.service';
 import { ReceptionsService } from '../../services/receptions.service';
 import { AuthService } from '../../services/auth.service'; 
+import { NotificationService } from '../../services/notification.service'; // 1. Importa el servicio
 
 @Component({
   selector: 'app-inventory-reception',
@@ -31,7 +32,8 @@ export class InventoryReceptionComponent implements OnInit, AfterViewInit {
     private productsService: ProductsService,
     private receptionsService: ReceptionsService,
     private cdr: ChangeDetectorRef,
-    private authService: AuthService
+    private authService: AuthService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -76,7 +78,7 @@ export class InventoryReceptionComponent implements OnInit, AfterViewInit {
   saveReception(): void {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      alert('Error: No se pudo identificar al usuario.');
+      this.notificationService.showError('Error: No se pudo identificar al usuario.');
       return;
     }
     // Asigna el user_id y el entity_id del usuario logueado
@@ -85,12 +87,13 @@ export class InventoryReceptionComponent implements OnInit, AfterViewInit {
 
     this.receptionsService.createReception(this.reception).subscribe({
       next: () => {
-        alert('Recepción guardada exitosamente.');
+        this.notificationService.showSuccess('Recepción guardada exitosamente.');
         this.resetForm();
       },
       error: (err) => {
         console.error(err);
-        alert('Error al guardar la recepción.');
+        const errorMessage = err.error?.error || 'Ocurrió un error inesperado.';
+        this.notificationService.showError(errorMessage);
       }
     });
   }

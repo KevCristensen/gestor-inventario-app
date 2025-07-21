@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ProductsService } from '../../services/products.service';
 import { InventoryService } from '../../services/inventory.service';
 import { AuthService } from '../../services/auth.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-inventory-exit',
@@ -25,7 +26,8 @@ export class InventoryExitComponent implements OnInit, AfterViewInit {
     private productsService: ProductsService,
     private inventoryService: InventoryService,
     private authService: AuthService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private notificationService: NotificationService 
   ) {}
 
   ngOnInit(): void {
@@ -57,7 +59,7 @@ export class InventoryExitComponent implements OnInit, AfterViewInit {
         }
         this.cdr.detectChanges();
       },
-      error: () => alert(`Producto con código ${barcode} no encontrado.`)
+      error: () => this.notificationService.showError(`Producto con código ${barcode} no encontrado.`)
     });
   }
 
@@ -67,18 +69,18 @@ export class InventoryExitComponent implements OnInit, AfterViewInit {
 
   saveExit(): void {
     if (this.exitData.items.length === 0) {
-      alert('Debe añadir al menos un producto.');
+      this.notificationService.showError('Debe añadir al menos un producto.');
       return;
     }
     this.inventoryService.createExit(this.exitData).subscribe({
       next: () => {
-        alert('Salida registrada exitosamente.');
+        this.notificationService.showSuccess('Salida registrada exitosamente.');
         this.resetForm();
       },
       error: (err) => {
         // El mensaje específico del backend viene en err.error.error
         const errorMessage = err.error?.error || 'Ocurrió un error inesperado.';
-        alert(errorMessage);
+        this.notificationService.showError(errorMessage);
       }
     });
   }
