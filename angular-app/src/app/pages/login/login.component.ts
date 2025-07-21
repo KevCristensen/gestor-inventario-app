@@ -13,12 +13,11 @@ import { NotificationService } from '../../services/notification.service';
 })
 export class LoginComponent {
   credentials = {
-    email: 'admin@test.com', // <- Puedes pre-llenarlo para pruebas
-    password: 'admin',
+    email: '', // <- Si se quiere hacer pruebas hay que rellenar los campos
+    password: '',
   };
   errorMessage: string | null = null;
 
-  // 2. INYECTA EL SERVICIO EN EL CONSTRUCTOR
   constructor(
     private authService: AuthService,
     private router: Router,

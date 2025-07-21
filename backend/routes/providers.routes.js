@@ -5,13 +5,13 @@ const dbPool = require('../db'); // Importamos la conexión a la DB
 // CREAR un nuevo proveedor
 router.post('/', async (req, res) => {
     try {
-        const { name, rut, contact_person, phone, email } = req.body;
+        const { name, rut, contact_person, phone, email, delivery_schedule, delivery_days } = req.body;
         if (!name) {
             return res.status(400).json({ error: 'El nombre es requerido.' });
         }
         const [result] = await dbPool.query(
-            'INSERT INTO providers (name, rut, contact_person, phone, email) VALUES (?, ?, ?, ?, ?)',
-            [name, rut, contact_person, phone, email]
+            'INSERT INTO providers (name, rut, contact_person, phone, email, delivery_schedule, delivery_days) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [name, rut, contact_person, phone, email, delivery_schedule, delivery_days]
         );
         res.status(201).json({ id: result.insertId, ...req.body });
     } catch (error) {
@@ -47,10 +47,10 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, rut, contact_person, phone, email, is_active } = req.body;
+        const { name, rut, contact_person, phone, email, is_active, delivery_schedule, delivery_days } = req.body;
         await dbPool.query(
-            'UPDATE providers SET name = ?, rut = ?, contact_person = ?, phone = ?, email = ?, is_active = ? WHERE id = ?',
-            [name, rut, contact_person, phone, email, is_active, id]
+            'UPDATE providers SET name = ?, rut = ?, contact_person = ?, phone = ?, email = ?, is_active = ?, delivery_schedule = ?, delivery_days = ? WHERE id = ?',
+            [name, rut, contact_person, phone, email, is_active, delivery_schedule, delivery_days, id]
         );
         res.json({ message: 'Proveedor actualizado exitosamente.' });
     } catch (error) {

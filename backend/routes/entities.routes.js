@@ -12,4 +12,19 @@ router.get('/', async (req, res) => {
     }
 });
 
+// GET /api/entities/:id
+router.get('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [[entity]] = await dbPool.query('SELECT * FROM entities WHERE id = ?', [id]);
+        if (!entity) {
+            return res.status(404).json({ error: 'Entidad no encontrada.' });
+        }
+        res.json(entity);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener la entidad.' });
+    }
+});
+
+
 module.exports = router;

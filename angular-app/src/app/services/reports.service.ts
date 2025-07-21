@@ -15,4 +15,9 @@ export class ReportsService {
       responseType: 'blob' // ¡Importante! Le decimos que espere un archivo
     });
   }
+  downloadReceptionsReport(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/receptions`, {
+      responseType: 'blob'
+    });
+  }
 }

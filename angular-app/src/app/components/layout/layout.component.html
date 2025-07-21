@@ -20,6 +20,20 @@
       </div>
 
       <div>
+        @if (currentUser) {
+          <div class="mb-4 p-3 border border-gray-700 rounded-lg">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm font-semibold text-white truncate">{{ currentUser.email }}</p>
+                <p class="text-xs text-gray-400 capitalize">{{ entityName }} ({{ currentUser.role }})</p>
+              </div>
+            </div>
+          </div>
+        }
+      
         <footer class="text-center text-xs text-gray-500 mb-4">
           <p>KC Smart Systems</p>
           <p>Por Kevin Cristensen</p>

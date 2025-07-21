@@ -13,4 +13,8 @@ export class EntitiesService {
   getEntities(): Observable<any[]> {
     return this.http.get<any[]>(this.apiUrl);
   }
+
+  getEntityById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${id}`);
+  }
 }
