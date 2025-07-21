@@ -4,31 +4,29 @@ const url = require('url');
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 
-// --- Configuración del Logger para el Auto-Updater ---
-// Esto creará un archivo de log para que podamos ver qué hace el actualizador
+// --- Configuración del Logger ---
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
 log.info('Iniciando aplicación...');
-
-const releaseNotes = require('./release-notes.json');
 
 // --- Dependencias y Rutas del Backend ---
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const { isAdmin } = require('./backend/middleware/auth.middleware');
-const providersRoutes = require('./backend/routes/providers.routes'); 
-const productsRoutes = require('./backend/routes/products.routes'); 
+const providersRoutes = require('./backend/routes/providers.routes');
+const productsRoutes = require('./backend/routes/products.routes');
 const authRoutes = require('./backend/routes/auth.routes');
-const receptionsRoutes = require('./backend/routes/receptions.routes'); 
+const receptionsRoutes = require('./backend/routes/receptions.routes');
 const dashboardRoutes = require('./backend/routes/dashboard.routes');
 const inventoryRoutes = require('./backend/routes/inventory.routes');
-const reportsRoutes = require('./backend/routes/reports.routes');   
-const entitiesRoutes = require('./backend/routes/entities.routes'); 
+const reportsRoutes = require('./backend/routes/reports.routes');
+const entitiesRoutes = require('./backend/routes/entities.routes');
 
 let mainWindow;
 
-function createWindow() {
+// 1. La función ahora recibe la información de la versión
+function createWindow(versionInfo) {
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -40,8 +38,6 @@ function createWindow() {
         }
     });
 
-    // --- LÓGICA DE CARGA DE URL MEJORADA ---
-    // Esto soluciona el problema de la pantalla en blanco al recargar
     const startURL = app.isPackaged
         ? url.format({
             pathname: path.join(__dirname, 'dist/browser/index.html'),
@@ -52,17 +48,22 @@ function createWindow() {
 
     mainWindow.loadURL(startURL);
 
-    // Abrir DevTools solo en modo de desarrollo
     if (!app.isPackaged) {
         mainWindow.webContents.openDevTools();
     }
+
+    // 2. La lógica de las notas se mueve aquí, dentro de un listener seguro
+    mainWindow.webContents.on('did-finish-load', () => {
+        if (versionInfo.isNewVersion && versionInfo.notes) {
+            mainWindow.webContents.send('show-release-notes', versionInfo.currentVersion, versionInfo.notes);
+        }
+    });
 
     mainWindow.on('closed', function () {
         mainWindow = null;
     });
 }
 
-// --- Tu función startServer no necesita cambios ---
 async function startServer() {
     const backendApp = express();
     backendApp.use(cors());
@@ -84,24 +85,27 @@ async function startServer() {
 }
 
 app.on('ready', async () => {
+    // 3. Primero, preparamos toda la información
     const { default: Store } = await import('electron-store');
     const store = new Store();
     const releaseNotes = require('./release-notes.json');
-
-    createWindow();
-    startServer();
-    autoUpdater.checkForUpdatesAndNotify();
-
     const currentVersion = app.getVersion();
     const lastRunVersion = store.get('lastRunVersion');
 
-    if (currentVersion !== lastRunVersion) {
-        mainWindow.webContents.on('did-finish-load', () => {
-            // Envía la versión y las notas correspondientes
-            mainWindow.webContents.send('show-release-notes', currentVersion, releaseNotes[currentVersion]);
-        });
+    const versionInfo = {
+        isNewVersion: currentVersion !== lastRunVersion,
+        currentVersion: currentVersion,
+        notes: releaseNotes[currentVersion]
+    };
+    
+    if (versionInfo.isNewVersion) {
         store.set('lastRunVersion', currentVersion);
     }
+
+    // 4. Iniciamos los procesos y pasamos la información a la ventana
+    await startServer();
+    createWindow(versionInfo);
+    autoUpdater.checkForUpdatesAndNotify();
 });
 
 app.on('window-all-closed', () => {
@@ -120,23 +124,19 @@ ipcMain.on('get-app-version', (event) => {
     event.sender.send('app-version', { version: app.getVersion() });
 });
 
-
 ipcMain.on('print-receipt', (event, receiptData) => {
-    // 1. Crea una nueva ventana VISIBLE
     const printWindow = new BrowserWindow({
         width: 800,
         height: 600,
-        show: true, // Asegúrate de que la ventana se muestre
+        show: true,
         webPreferences: {
-            nodeIntegration: true, // Necesario para el script en receipt-template.html
+            nodeIntegration: true,
             contextIsolation: false
         }
     });
 
-    // 2. Carga la plantilla
     printWindow.loadFile('receipt-template.html');
 
-    // 3. Envía los datos una vez que la ventana esté lista
     printWindow.webContents.on('did-finish-load', () => {
         printWindow.webContents.send('receipt-data', receiptData);
     });
