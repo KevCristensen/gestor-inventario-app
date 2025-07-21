@@ -1,19 +1,20 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '.env') });
-const { autoUpdater } = require('electron-updater');
-
-
 const url = require('url');
-// --- Dependencias del Backend ---
+const { autoUpdater } = require('electron-updater');
+const log = require('electron-log'); // 1. Importa el logger
+
+// --- Configuración del Logger para el Auto-Updater ---
+// Esto creará un archivo de log para que podamos ver qué hace el actualizador
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+log.info('Iniciando aplicación...');
+
+// --- Dependencias y Rutas del Backend ---
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
-const cors = require('cors'); 
-// Ya no necesitas 'mysql2' ni 'dotenv' aquí, porque se manejan en db.js
-
-// --- Importar middleware ---
+const cors = require('cors');
 const { isAdmin } = require('./backend/middleware/auth.middleware');
-
-// --- Importar rutas del backend ---
 const providersRoutes = require('./backend/routes/providers.routes'); 
 const productsRoutes = require('./backend/routes/products.routes'); 
 const authRoutes = require('./backend/routes/auth.routes');
@@ -23,11 +24,7 @@ const inventoryRoutes = require('./backend/routes/inventory.routes');
 const reportsRoutes = require('./backend/routes/reports.routes');   
 const entitiesRoutes = require('./backend/routes/entities.routes'); 
 
-
-
-
 let mainWindow;
-
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -41,19 +38,20 @@ function createWindow() {
         }
     });
 
-    if (app.isPackaged) {
-        // Carga el index.html de Angular en producción
-        mainWindow.loadURL(url.format({
-            pathname: path.join(__dirname, 'dist/browser/index.html'),           
+    // --- LÓGICA DE CARGA DE URL MEJORADA ---
+    // Esto soluciona el problema de la pantalla en blanco al recargar
+    const startURL = app.isPackaged
+        ? url.format({
+            pathname: path.join(__dirname, 'dist/browser/index.html'),
             protocol: 'file:',
             slashes: true
-        }));
-        
-        // Para depurar la pantalla en blanco:
-        mainWindow.webContents.openDevTools(); 
-    } else {
-        // Carga la URL de desarrollo de Angular
-        mainWindow.loadURL('http://localhost:4200');
+          })
+        : 'http://localhost:4200';
+
+    mainWindow.loadURL(startURL);
+
+    // Abrir DevTools solo en modo de desarrollo
+    if (!app.isPackaged) {
         mainWindow.webContents.openDevTools();
     }
 
@@ -62,27 +60,20 @@ function createWindow() {
     });
 }
 
-// --- Función para iniciar el servidor Backend ---
+// --- Tu función startServer no necesita cambios ---
 async function startServer() {
     const backendApp = express();
     backendApp.use(cors());
     backendApp.use(express.json());
-
-    // --- Endpoints de la API ---
-    // Simplemente "usamos" los módulos de rutas que hemos creado
-    // Estas rutas ahora requieren un token de admin válido
+    
     backendApp.use('/api/providers', isAdmin, providersRoutes);
     backendApp.use('/api/products', isAdmin, productsRoutes);
-
     backendApp.use('/api/auth', authRoutes);
     backendApp.use('/api/receptions', receptionsRoutes); 
     backendApp.use('/api/dashboard', dashboardRoutes);
     backendApp.use('/api/inventory', inventoryRoutes); 
     backendApp.use('/api/reports', reportsRoutes); 
     backendApp.use('/api/entities', entitiesRoutes);
-    // Más adelante añadiremos más:
-    // backendApp.use('/api/products', productsRoutes);
-    // backendApp.use('/api/auth', authRoutes);
 
     const PORT = 3000;
     backendApp.listen(PORT, () => {
@@ -96,9 +87,7 @@ app.on('ready', () => {
     autoUpdater.checkForUpdatesAndNotify();
 });
 
-
-
-
+// --- El resto de los eventos de 'app' no necesitan cambios ---
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
