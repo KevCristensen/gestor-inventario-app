@@ -1,1 +1,9 @@
 <router-outlet></router-outlet>
+
+@if (showReleaseNotes) {
+  <app-release-notes 
+    [version]="releaseNotesData.version"
+    [notes]="releaseNotesData.notes"
+    (close)="closeReleaseNotes()">
+  </app-release-notes>
+}

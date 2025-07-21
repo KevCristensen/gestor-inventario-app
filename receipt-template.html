@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Comprobante de Recepción</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 20mm;
+            width: 210mm; /* Ancho estándar A4 */
+            box-sizing: border-box;
+            color: #333;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #007bff;
+            margin: 0;
+        }
+        .company-info {
+            text-align: right;
+            font-size: 14px;
+        }
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        .details-grid p {
+            margin: 0;
+        }
+        .details-grid strong {
+            display: block;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        thead {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+        }
+        @media print {
+            .print-controls { display: none !important; } /* Oculta los botones al imprimir */
+        }
+        .print-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .print-controls button {
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .print-btn { background-color: #007bff; color: white; border-color: #007bff; }
+    </style>
+</head>
+<body>
+    <div class="print-controls">
+        <button onclick="window.print()">Imprimir</button>
+        <button onclick="window.close()">Cerrar</button>
+    </div>
+
+    <div id="receipt-content">
+        </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        ipcRenderer.on('receipt-data', (event, data) => {
+            const container = document.getElementById('receipt-content');
+            
+            let itemsHtml = '';
+            data.items.forEach(item => {
+                itemsHtml += `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.quantity}</td>
+                        <td>${item.lot_number || 'N/A'}</td>
+                        <td>${item.expiration_date || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+
+            const html = `
+                <div class="header">
+                    <h1>Comprobante de ${data.type}</h1>
+                    <div class="company-info">
+                        <strong>KC Smart Systems</strong><br>
+                        Fecha: ${new Date(data.timestamp).toLocaleDateString()}
+                    </div>
+                </div>
+
+                <div class="details-grid">
+                    <div>
+                        <strong>Usuario:</strong>
+                        <p>${data.user.email}</p>
+                    </div>
+                    <div>
+                        <strong>Bodega:</strong>
+                        <p>${data.entityName}</p>
+                    </div>
+                    <div>
+                        <strong>Motivo / Factura:</strong>
+                        <p>${data.notes || 'N/A'}</p>
+                    </div>
+                </div>
+
+                <h3>Items Registrados</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Lote</th>
+                            <th>Vencimiento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml}
+                    </tbody>
+                </table>
+                <p class="footer">Documento generado por Gestor de Inventario.</p>
+            `;
+
+            container.innerHTML = html;
+            ipcRenderer.send('ready-to-print');
+        });
+    </script>
+</body>
+</html>

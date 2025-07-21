@@ -6,8 +6,8 @@ import { ProvidersService } from '../../services/providers.service';
 import { ProductsService } from '../../services/products.service';
 import { ReceptionsService } from '../../services/receptions.service';
 import { AuthService } from '../../services/auth.service'; 
-import { NotificationService } from '../../services/notification.service'; // 1. Importa el servicio
-
+import { NotificationService } from '../../services/notification.service'; 
+import { EntitiesService } from '../../services/entities.service'; 
 @Component({
   selector: 'app-inventory-reception',
   standalone: true,
@@ -26,6 +26,7 @@ export class InventoryReceptionComponent implements OnInit, AfterViewInit {
     items: [] as any[],
     entity_id: null, 
   };
+  entityName: string = '';
 
   constructor(
     private providersService: ProvidersService,
@@ -33,13 +34,20 @@ export class InventoryReceptionComponent implements OnInit, AfterViewInit {
     private receptionsService: ReceptionsService,
     private cdr: ChangeDetectorRef,
     private authService: AuthService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private entitiesService: EntitiesService,
   ) {}
 
   ngOnInit(): void {
     this.providersService.getProviders().subscribe(data => {
       this.providerList = data;
       this.cdr.detectChanges(); 
+      const currentUser = this.authService.getCurrentUser();
+      if (currentUser?.entity_id) {
+        this.entitiesService.getEntityById(currentUser.entity_id).subscribe(entity => {
+          this.entityName = entity.name;
+        });
+      }
     });
   }
 
@@ -96,6 +104,23 @@ export class InventoryReceptionComponent implements OnInit, AfterViewInit {
         this.notificationService.showError(errorMessage);
       }
     });
+  }
+
+  printReceipt() {
+    // Construye el objeto de datos para la boleta
+    const receiptData = {
+        type: 'Recepción', // o 'Salida' en el otro componente
+        timestamp: new Date(),
+        user: this.authService.getCurrentUser(),
+        entityName: this.entityName, // Necesitarás obtenerlo como en el layout
+        notes: this.reception.invoice_number, // o this.exitData.notes
+        items: this.reception.items, // o this.exitData.items
+    };
+    
+    // Envía los datos al proceso principal para imprimir
+    //(window as any).electronAPI.send('print-receipt', receiptData);
+    window.electronAPI.send('print-receipt', receiptData);
+    
   }
 
   resetForm(): void {

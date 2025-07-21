@@ -5,6 +5,7 @@ import { ProductsService } from '../../services/products.service';
 import { InventoryService } from '../../services/inventory.service';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
+import { EntitiesService } from '../../services/entities.service';
 
 @Component({
   selector: 'app-inventory-exit',
@@ -21,13 +22,15 @@ export class InventoryExitComponent implements OnInit, AfterViewInit {
     notes: '',
     items: [] as any[],
   };
+  entityName: string = '';
 
   constructor(
     private productsService: ProductsService,
     private inventoryService: InventoryService,
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
-    private notificationService: NotificationService 
+    private notificationService: NotificationService,
+    private entitiesService: EntitiesService 
   ) {}
 
   ngOnInit(): void {
@@ -36,6 +39,12 @@ export class InventoryExitComponent implements OnInit, AfterViewInit {
       this.exitData.user_id = currentUser.id;
       this.exitData.entity_id = currentUser.entity_id;
     }
+    if (currentUser?.entity_id) {
+      this.entitiesService.getEntityById(currentUser.entity_id).subscribe(entity => {
+        this.entityName = entity.name;
+      });
+    }
+    
   }
 
   ngAfterViewInit(): void {
@@ -83,6 +92,22 @@ export class InventoryExitComponent implements OnInit, AfterViewInit {
         this.notificationService.showError(errorMessage);
       }
     });
+  }
+
+  printReceipt() {
+    // Construye el objeto de datos para la boleta
+    const receiptData = {
+        type: 'Salida', // o 'Salida' en el otro componente
+        timestamp: new Date(),
+        user: this.authService.getCurrentUser(),
+        entityName: this.entityName, // Necesitarás obtenerlo como en el layout
+        notes: this.exitData.notes, // o this.exitData.notes
+        items: this.exitData.items, // o this.exitData.items
+    };
+    
+    // Envía los datos al proceso principal para imprimir
+    //(window as any).electronAPI.send('print-receipt', receiptData);
+    window.electronAPI.send('print-receipt', receiptData);
   }
 
   resetForm(): void {

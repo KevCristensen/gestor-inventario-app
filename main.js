@@ -2,13 +2,15 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const url = require('url');
 const { autoUpdater } = require('electron-updater');
-const log = require('electron-log'); // 1. Importa el logger
+const log = require('electron-log');
 
 // --- Configuración del Logger para el Auto-Updater ---
 // Esto creará un archivo de log para que podamos ver qué hace el actualizador
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
 log.info('Iniciando aplicación...');
+
+const releaseNotes = require('./release-notes.json');
 
 // --- Dependencias y Rutas del Backend ---
 require('dotenv').config({ path: path.join(__dirname, '.env') });
@@ -81,13 +83,27 @@ async function startServer() {
     });
 }
 
-app.on('ready', () => {
+app.on('ready', async () => {
+    const { default: Store } = await import('electron-store');
+    const store = new Store();
+    const releaseNotes = require('./release-notes.json');
+
     createWindow();
     startServer();
     autoUpdater.checkForUpdatesAndNotify();
+
+    const currentVersion = app.getVersion();
+    const lastRunVersion = store.get('lastRunVersion');
+
+    if (currentVersion !== lastRunVersion) {
+        mainWindow.webContents.on('did-finish-load', () => {
+            // Envía la versión y las notas correspondientes
+            mainWindow.webContents.send('show-release-notes', currentVersion, releaseNotes[currentVersion]);
+        });
+        store.set('lastRunVersion', currentVersion);
+    }
 });
 
-// --- El resto de los eventos de 'app' no necesitan cambios ---
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
@@ -102,4 +118,26 @@ app.on('activate', () => {
 
 ipcMain.on('get-app-version', (event) => {
     event.sender.send('app-version', { version: app.getVersion() });
+});
+
+
+ipcMain.on('print-receipt', (event, receiptData) => {
+    // 1. Crea una nueva ventana VISIBLE
+    const printWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        show: true, // Asegúrate de que la ventana se muestre
+        webPreferences: {
+            nodeIntegration: true, // Necesario para el script en receipt-template.html
+            contextIsolation: false
+        }
+    });
+
+    // 2. Carga la plantilla
+    printWindow.loadFile('receipt-template.html');
+
+    // 3. Envía los datos una vez que la ventana esté lista
+    printWindow.webContents.on('did-finish-load', () => {
+        printWindow.webContents.send('receipt-data', receiptData);
+    });
 });

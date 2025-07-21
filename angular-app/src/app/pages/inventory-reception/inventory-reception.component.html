@@ -68,8 +68,18 @@
           </tbody>
         </table>
         
-        <div class="flex justify-end mt-6">
-          <button (click)="saveReception()" [disabled]="!reception.provider_id || reception.items.length === 0" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500">
+        <div class="flex justify-end mt-6 space-x-4">
+          <button 
+            (click)="printReceipt()" 
+            [disabled]="reception.items.length === 0"
+            class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500">
+            Imprimir
+          </button>
+        
+          <button 
+            (click)="saveReception()" 
+            [disabled]="!reception.provider_id || reception.items.length === 0" 
+            class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500">
             Guardar Recepción
           </button>
         </div>

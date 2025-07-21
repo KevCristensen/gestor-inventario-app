@@ -40,8 +40,18 @@
           }
         </tbody>
       </table>
-      <div class="flex justify-end mt-6">
-        <button (click)="saveExit()" [disabled]="exitData.items.length === 0" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500">
+      <div class="flex justify-end mt-6 space-x-4">
+        <button 
+          (click)="printReceipt()" 
+          [disabled]="exitData.items.length === 0"
+          class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500">
+          Imprimir
+        </button>
+      
+        <button 
+          (click)="saveExit()" 
+          [disabled]="exitData.items.length === 0" 
+          class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500">
           Confirmar Salida
         </button>
       </div>
