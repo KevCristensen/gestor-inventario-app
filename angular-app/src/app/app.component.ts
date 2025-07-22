@@ -16,12 +16,14 @@ export class AppComponent implements OnInit {
   constructor(private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    // 4. Escucha el evento desde el backend
-    window.electronAPI.on('show-release-notes', (version, notes) => {
-      this.releaseNotesData = { version, notes };
-      this.showReleaseNotes = true;
-      this.cdr.detectChanges(); // Notifica a Angular del cambio
-    });
+    // Comprueba si la API de Electron está disponible antes de usarla
+    if (window.electronAPI && typeof window.electronAPI.on === 'function') {
+      window.electronAPI.on('show-release-notes', (version, notes) => {
+        this.releaseNotesData = { version, notes };
+        this.showReleaseNotes = true;
+        this.cdr.detectChanges();
+      });
+    }
   }
 
   closeReleaseNotes(): void {
