@@ -1,9 +1,15 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const url = require('url');
+const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 
-// --- Dependencias y Rutas del Backend (Re-activadas) ---
+// --- Configuración del Logger ---
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+log.info('Iniciando aplicación...');
+
+// --- Dependencias y Rutas del Backend ---
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
@@ -17,39 +23,40 @@ const inventoryRoutes = require('../backend/routes/inventory.routes');
 const reportsRoutes = require('../backend/routes/reports.routes');   
 const entitiesRoutes = require('../backend/routes/entities.routes'); 
 
-log.info('--- Inicio de la Aplicación ---');
-
 let mainWindow;
 
-function createWindow() {
-    log.info('Función createWindow: Iniciando...');
+// 1. La función ahora recibe la información de la versión
+function createWindow(versionInfo) {
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
-        webPreferences: { 
+        webPreferences: {
             webSecurity: false,
             nodeIntegration: false,
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
-         }
+        }
     });
-    log.info('Función createWindow: Ventana creada.');
 
     const startURL = app.isPackaged
         ? url.format({
-            pathname: path.join(__dirname, '../dist/browser/index.html'), // <-- CAMBIO
+            pathname: path.join(__dirname, '../dist/browser/index.html'),
             protocol: 'file:',
             slashes: true
           })
         : 'http://localhost:4200';
 
-    log.info(`Función createWindow: Intentando cargar URL: ${startURL}`);
     mainWindow.loadURL(startURL);
 
-    mainWindow.webContents.openDevTools();
+    if (!app.isPackaged) {
+        mainWindow.webContents.openDevTools();
+    }
 
-    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-        log.error(`Fallo al cargar la URL: ${errorDescription}, Código: ${errorCode}`);
+    // 2. La lógica de las notas se mueve aquí, dentro de un listener seguro
+    mainWindow.webContents.on('did-finish-load', () => {
+        if (versionInfo.isNewVersion && versionInfo.notes) {
+            mainWindow.webContents.send('show-release-notes', versionInfo.currentVersion, versionInfo.notes);
+        }
     });
 
     mainWindow.on('closed', function () {
@@ -80,17 +87,27 @@ async function startServer() {
 }
 
 app.on('ready', async () => {
-    log.info("Evento 'ready': Disparado.");
-    try {
-        createWindow();
-        log.info("Evento 'ready': createWindow llamado exitosamente.");
-        
-        await startServer(); // <-- Re-activado
-        log.info("Evento 'ready': startServer llamado exitosamente.");
+    // 3. Primero, preparamos toda la información
+    const { default: Store } = await import('electron-store');
+    const store = new Store();
+    const releaseNotes = require('../release-notes.json');
+    const currentVersion = app.getVersion();
+    const lastRunVersion = store.get('lastRunVersion');
 
-    } catch (error) {
-        log.error("Evento 'ready': Error durante el inicio:", error);
+    const versionInfo = {
+        isNewVersion: currentVersion !== lastRunVersion,
+        currentVersion: currentVersion,
+        notes: releaseNotes[currentVersion]
+    };
+    
+    if (versionInfo.isNewVersion) {
+        store.set('lastRunVersion', currentVersion);
     }
+
+    // 4. Iniciamos los procesos y pasamos la información a la ventana
+    await startServer();
+    createWindow(versionInfo);
+    autoUpdater.checkForUpdatesAndNotify();
 });
 
 app.on('window-all-closed', () => {
