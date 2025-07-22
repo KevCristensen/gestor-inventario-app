@@ -2,7 +2,7 @@
   "name": "gestor-inventario",
   "version": "1.0.5",
   "description": "Gestor de Inventario de Alimentos",
-  "main": "main.js",
+  "main": "electron/main.js",
   "author": "Kevin Cristensen (KC Smart Systems)",
   "license": "MIT",
   "scripts": {
@@ -46,7 +46,9 @@
       "backend/**/*",
       "dist/**/*",
       "release-notes.json",
-      "receipt-template.html"
+      "receipt-template.html",
+      "electron/**/*",
+      "node_modules/**/*"
     ],
     "win": {
       "target": "nsis"
