@@ -60,9 +60,6 @@ function createWindow() {
 
     mainWindow.loadURL(startURL);
 
-    if (!app.isPackaged) {
-        mainWindow.webContents.openDevTools();
-    }
 
     mainWindow.on('closed', function () {
         mainWindow = null;
