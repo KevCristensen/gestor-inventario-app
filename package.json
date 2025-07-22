@@ -1,6 +1,6 @@
 {
   "name": "gestor-inventario",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Gestor de Inventario de Alimentos",
   "main": "electron/main.js",
   "author": "Kevin Cristensen (KC Smart Systems)",
@@ -60,7 +60,8 @@
     "publish": {
       "provider": "github",
       "owner": "KevCristensen",
-      "repo": "gestor-inventario-app"
+      "repo": "gestor-inventario-app",
+      "private":true
     }
   }
 }
