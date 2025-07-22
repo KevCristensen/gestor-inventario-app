@@ -1,8 +1,20 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const url = require('url');
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
+
+// --- Single Instance Lock (Buena práctica) ---
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
 
 // --- Configuración del Logger ---
 autoUpdater.logger = log;
@@ -86,6 +98,35 @@ async function startServer() {
     });
 }
 
+// --- NUEVA FUNCIÓN PARA MANEJAR ACTUALIZACIONES ---
+function handleUpdates() {
+    autoUpdater.on('update-available', (info) => {
+        log.info('Actualización disponible.', info);
+        dialog.showMessageBox({
+            type: 'info',
+            title: 'Actualización Disponible',
+            message: `Hay una nueva versión (${info.version}) disponible. ¿Deseas descargarla y reiniciar la aplicación ahora?`,
+            buttons: ['Sí', 'No']
+        }).then(result => {
+            if (result.response === 0) { // Si el usuario hace clic en 'Sí'
+                autoUpdater.downloadUpdate();
+            }
+        });
+    });
+
+    autoUpdater.on('update-downloaded', (info) => {
+        log.info('Actualización descargada. Se instalará al salir.');
+        autoUpdater.quitAndInstall();
+    });
+
+    autoUpdater.on('error', (err) => {
+        log.error('Error en el auto-updater. ' + err);
+    });
+    
+    // Inicia la búsqueda de actualizaciones
+    autoUpdater.checkForUpdates();
+}
+
 app.on('ready', async () => {
     // 3. Primero, preparamos toda la información
     const { default: Store } = await import('electron-store');
@@ -107,7 +148,7 @@ app.on('ready', async () => {
     // 4. Iniciamos los procesos y pasamos la información a la ventana
     await startServer();
     createWindow(versionInfo);
-    autoUpdater.checkForUpdatesAndNotify();
+    handleUpdates(); 
 });
 
 app.on('window-all-closed', () => {
