@@ -38,7 +38,7 @@ const entitiesRoutes = require('../backend/routes/entities.routes');
 let mainWindow;
 
 // 1. La función ahora recibe la información de la versión
-function createWindow(versionInfo) {
+function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -63,13 +63,6 @@ function createWindow(versionInfo) {
     if (!app.isPackaged) {
         mainWindow.webContents.openDevTools();
     }
-
-    // 2. La lógica de las notas se mueve aquí, dentro de un listener seguro
-    mainWindow.webContents.on('did-finish-load', () => {
-        if (versionInfo.isNewVersion && versionInfo.notes) {
-            mainWindow.webContents.send('show-release-notes', versionInfo.currentVersion, versionInfo.notes);
-        }
-    });
 
     mainWindow.on('closed', function () {
         mainWindow = null;
@@ -108,7 +101,7 @@ function handleUpdates() {
             message: `Hay una nueva versión (${info.version}) disponible. ¿Deseas descargarla y reiniciar la aplicación ahora?`,
             buttons: ['Sí', 'No']
         }).then(result => {
-            if (result.response === 0) { // Si el usuario hace clic en 'Sí'
+            if (result.response === 0) {
                 autoUpdater.downloadUpdate();
             }
         });
@@ -123,33 +116,15 @@ function handleUpdates() {
         log.error('Error en el auto-updater. ' + err);
     });
     
-    // Inicia la búsqueda de actualizaciones
     autoUpdater.checkForUpdates();
 }
 
 app.on('ready', async () => {
-    // 3. Primero, preparamos toda la información
-    const { default: Store } = await import('electron-store');
-    const store = new Store();
-    const releaseNotes = require('../release-notes.json');
-    const currentVersion = app.getVersion();
-    const lastRunVersion = store.get('lastRunVersion');
-
-    const versionInfo = {
-        isNewVersion: currentVersion !== lastRunVersion,
-        currentVersion: currentVersion,
-        notes: releaseNotes[currentVersion]
-    };
-    
-    if (versionInfo.isNewVersion) {
-        store.set('lastRunVersion', currentVersion);
-    }
-
-    // 4. Iniciamos los procesos y pasamos la información a la ventana
     await startServer();
-    createWindow(versionInfo);
+    createWindow();
     handleUpdates(); 
 });
+
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
