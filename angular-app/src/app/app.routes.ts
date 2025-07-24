@@ -10,6 +10,9 @@ import { InventoryExitComponent } from './pages/inventory-exit/inventory-exit.co
 import { ReportsComponent } from './pages/reports/reports.component';
 import { GlobalInventoryComponent } from './pages/global-inventory/global-inventory.component';
 import { ConsumptionAnalysisComponent } from './pages/consumption-analysis/consumption-analysis.component';
+import { AssetsComponent } from './pages/assets/assets.component';
+import { AssetMovementsComponent } from './pages/asset-movements/asset-movements.component';
+import { AssetInventoryComponent } from './pages/asset-inventory/asset-inventory.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -26,6 +29,9 @@ export const routes: Routes = [
             { path: 'reports', component: ReportsComponent },
             { path: 'global-inventory', component: GlobalInventoryComponent },
             { path: 'analysis', component: ConsumptionAnalysisComponent },
+            { path: 'assets', component: AssetsComponent },
+            { path: 'asset-movements', component: AssetMovementsComponent },
+            { path: 'asset-inventory', component: AssetInventoryComponent }, 
         ]
     },
     { path: '', redirectTo: '/dashboard', pathMatch: 'full' }, 

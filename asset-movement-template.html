@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Comprobante de Movimiento</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20mm; width: 210mm; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        thead { background-color: #f2f2f2; }
+        .signatures { margin-top: 80px; display: flex; justify-content: space-around; text-align: center; font-size: 12px; }
+        .signature-box { border-top: 1px solid #333; width: 200px; padding-top: 10px; }
+        @media print { .print-controls { display: none !important; } }
+        .print-controls { position: fixed; top: 10px; right: 10px; }
+    </style>
+</head>
+<body>
+    <div class="print-controls">
+        <button onclick="window.print()">Imprimir</button>
+        <button onclick="window.close()">Cerrar</button>
+    </div>
+    <div id="receipt-content"></div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        // Función para formatear moneda
+        const currencyFormatter = new Intl.NumberFormat('es-CL', {
+            style: 'currency', currency: 'CLP', minimumFractionDigits: 0
+        });
+
+        ipcRenderer.on('asset-movement-data', (event, data) => {
+            const container = document.getElementById('receipt-content');
+            
+            // --- LÓGICA DINÁMICA ---
+
+            // 1. Títulos dinámicos
+            const titles = {
+                entrada_inicial: 'Comprobante de Entrada Inicial',
+                salida_evento: 'Guía de Salida a Evento',
+                retorno_evento: 'Comprobante de Retorno de Evento',
+                traslado_salida: 'Guía de Despacho / Traslado',
+                baja: 'Comprobante de Baja de Activos'
+            };
+
+            // 2. Detalles dinámicos
+            let detailsHtml = `
+                <div><strong>Fecha:</strong> ${new Date(data.movement_date).toLocaleString()}</div>
+                <div><strong>Usuario:</strong> ${data.user.email}</div>
+            `;
+            if (data.from_entity_name) detailsHtml += `<div><strong>Bodega Origen:</strong> ${data.from_entity_name}</div>`;
+            if (data.to_entity_name) detailsHtml += `<div><strong>Bodega Destino:</strong> ${data.to_entity_name}</div>`;
+            if (data.event_details) detailsHtml += `<div><strong>Detalles Evento:</strong> ${data.event_details}</div>`;
+
+            // 3. Tabla de items (ahora es una lista)
+            let itemsHtml = '';
+            data.items.forEach(item => {
+                itemsHtml += `<tr><td>${item.name}</td><td style="text-align: right;">${item.quantity}</td></tr>`;
+            });
+
+            // 4. Firmas dinámicas
+            let signaturesHtml = '';
+            if (data.type === 'traslado_salida') {
+                signaturesHtml = `
+                    <div class="signature-box">Firma Bodega Origen</div>
+                    <div class="signature-box">Firma Transportista</div>
+                    <div class="signature-box">Firma Bodega Destino</div>
+                `;
+            } else if (data.type === 'salida_evento') {
+                signaturesHtml = `
+                    <div class="signature-box">Firma Bodega Origen</div>
+                    <div class="signature-box">Firma Responsable Evento</div>
+                `;
+            } else if (data.type === 'entrada_inicial' || data.type === 'retorno_evento') {
+                signaturesHtml = `<div class="signature-box">Firma Bodega Destino</div>`;
+            } else if (data.type === 'baja') {
+                signaturesHtml = `<div class="signature-box">Firma Responsable</div>`;
+            }
+
+            // --- FIN LÓGICA DINÁMICA ---
+
+            const html = `
+                <div class="header"><h1>${titles[data.type] || 'Comprobante de Movimiento'}</h1></div>
+                <div class="details-grid">${detailsHtml}</div>
+                <h3>Items en Movimiento</h3>
+                <table>
+                    <thead><tr><th>Activo</th><th style="text-align: right;">Cantidad</th></tr></thead>
+                    <tbody>${itemsHtml}</tbody>
+                </table>
+                <div class="signatures">${signaturesHtml}</div>
+            `;
+
+            container.innerHTML = html;
+        });
+    </script>
+</body>
+</html>

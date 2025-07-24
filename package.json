@@ -48,7 +48,8 @@
       "receipt-template.html",
       "electron/**/*",
       "node_modules/**/*",
-      "analysis-template.html"
+      "analysis-template.html",
+      "asset-movement-template.html"
     ],
     "win": {
       "target": "nsis"

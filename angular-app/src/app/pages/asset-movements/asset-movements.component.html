@@ -1,0 +1,83 @@
+<div class="text-white space-y-8">
+    <h1 class="text-3xl font-bold">Movimientos de Losa y Equipos</h1>
+    <div class="bg-gray-800 rounded-lg shadow p-6 space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <label class="block mb-2 text-sm">Tipo de Movimiento</label>
+          <select [(ngModel)]="movementData.type" (change)="onMovementTypeChange()" name="type" required class="w-full bg-gray-700 p-2.5 rounded-lg">
+            <option value="traslado_salida">Traslado</option>
+            <option value="salida_evento">Salida a Evento</option>
+            <option value="retorno_evento">Retorno de Evento</option>
+            <option value="entrada_inicial">Entrada Inicial (Nuevo)</option>
+            <option value="baja">Baja (Pérdida/Daño)</option>
+          </select>
+        </div>
+        @if (movementData.type === 'traslado_salida' || movementData.type === 'salida_evento' || movementData.type === 'baja') {
+          <div>
+            <label class="block mb-2 text-sm">Bodega de Origen</label>
+            <select [(ngModel)]="movementData.from_entity_id" name="from_entity_id" required class="w-full bg-gray-700 p-2.5 rounded-lg">
+              <option [ngValue]="null" disabled>Seleccione origen</option>
+              @for(entity of entities; track entity.id) { <option [value]="entity.id">{{entity.name}}</option> }
+            </select>
+          </div>
+        }
+        @if (movementData.type === 'traslado_salida' || movementData.type === 'retorno_evento' || movementData.type === 'entrada_inicial') {
+          <div>
+            <label class="block mb-2 text-sm">Bodega de Destino</label>
+            <select [(ngModel)]="movementData.to_entity_id" name="to_entity_id" required class="w-full bg-gray-700 p-2.5 rounded-lg">
+              <option [ngValue]="null" disabled>Seleccione destino</option>
+              @for(entity of entities; track entity.id) { <option [value]="entity.id">{{entity.name}}</option> }
+            </select>
+          </div>
+        }
+        @if (movementData.type === 'salida_evento') {
+          <div class="md:col-span-2">
+            <label class="block mb-2 text-sm">Detalles del Evento</label>
+            <input type="text" [(ngModel)]="movementData.event_details" name="event_details" required class="w-full bg-gray-700 p-2.5 rounded-lg">
+          </div>
+        }
+      </div>
+      <hr class="border-gray-700">
+      <div class="flex items-end gap-4">
+        <div class="flex-grow">
+          <label class="block mb-2 text-sm">Activo</label>
+          <select [(ngModel)]="itemToAdd.asset_id" name="asset_to_add" class="w-full bg-gray-700 p-2.5 rounded-lg">
+            <option [ngValue]="null" disabled>Seleccione un activo</option>
+            @for(asset of assets; track asset.id) { <option [value]="asset.id">{{asset.name}}</option> }
+          </select>
+        </div>
+        <div class="w-32">
+          <label class="block mb-2 text-sm">Cantidad</label>
+          <input type="number" [(ngModel)]="itemToAdd.quantity" name="quantity_to_add" min="1" class="w-full bg-gray-700 p-2.5 rounded-lg">
+        </div>
+        <button type="button" (click)="addItem()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-lg flex-shrink-0">Añadir a la Lista</button>
+      </div>
+    </div>
+    <div class="bg-gray-800 rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold mb-4">Items en este Movimiento</h2>
+      <table class="w-full text-left">
+        <thead class="border-b border-gray-600 text-sm text-gray-400">
+          <tr>
+            <th class="p-2">Activo</th>
+            <th class="p-2">Cantidad</th>
+            <th class="p-2">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(item of movementData.items; track item.asset_id) {
+            <tr class="border-b border-gray-700">
+              <td class="p-2">{{ item.name }}</td>
+              <td class="p-2">{{ item.quantity }}</td>
+              <td class="p-2"><button (click)="removeItem(item.asset_id)" class="text-red-400 hover:text-red-300">Quitar</button></td>
+            </tr>
+          } @empty {
+            <tr><td colspan="3" class="p-4 text-center">No has añadido items al movimiento.</td></tr>
+          }
+        </tbody>
+      </table>
+      <div class="flex justify-end mt-6 space-x-4">
+        <button (click)="printMovement()" [disabled]="movementData.items.length === 0" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2.5 px-6 rounded-lg disabled:opacity-50">Imprimir Guía</button>
+        <button (click)="registerMovement()" [disabled]="movementData.items.length === 0" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg disabled:opacity-50">Registrar Movimiento</button>
+      </div>
+    </div>
+  </div>

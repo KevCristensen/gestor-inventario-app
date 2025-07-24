@@ -35,6 +35,8 @@ const inventoryRoutes = require('../backend/routes/inventory.routes');
 const reportsRoutes = require('../backend/routes/reports.routes');   
 const entitiesRoutes = require('../backend/routes/entities.routes'); 
 const analysisRoutes = require('../backend/routes/analysis.routes');
+const assetsRoutes = require('../backend/routes/assets.routes');
+const assetMovementsRoutes = require('../backend/routes/asset-movements.routes'); 
 
 let mainWindow;
 
@@ -82,6 +84,8 @@ async function startServer() {
     backendApp.use('/api/reports', reportsRoutes); 
     backendApp.use('/api/entities', entitiesRoutes);
     backendApp.use('/api/analysis', analysisRoutes); 
+    backendApp.use('/api/assets', isAdmin, assetsRoutes);
+    backendApp.use('/api/asset-movements', assetMovementsRoutes); 
 
     const PORT = 3000;
     backendApp.listen(PORT, () => {
@@ -174,5 +178,23 @@ ipcMain.on('print-analysis', (event, analysisData) => {
 
     printWindow.webContents.on('did-finish-load', () => {
         printWindow.webContents.send('analysis-data', analysisData);
+    });
+});
+
+ipcMain.on('print-asset-movement', (event, movementData) => {
+    const printWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        show: true,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    });
+
+    printWindow.loadFile(path.join(__dirname, '../asset-movement-template.html'));
+
+    printWindow.webContents.on('did-finish-load', () => {
+        printWindow.webContents.send('asset-movement-data', movementData);
     });
 });
