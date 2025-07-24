@@ -37,14 +37,14 @@ router.get('/global-inventory', async (req, res) => {
     try {
         const query = `
             SELECT 
-                p.id, p.name, p.barcode, 
-                e.id as entity_id, -- AÑADE ESTA LÍNEA
+                p.id, p.name, p.barcode, p.min_stock_level, -- Añade min_stock_level
+                e.id as entity_id,
                 e.name as entity_name,
                 SUM(CASE WHEN im.type = 'entrada' THEN im.quantity ELSE -im.quantity END) as stock
             FROM products p
             JOIN inventory_movements im ON p.id = im.product_id
             JOIN entities e ON im.entity_id = e.id
-            GROUP BY p.id, p.name, p.barcode, e.id, e.name
+            GROUP BY p.id, p.name, p.barcode, p.min_stock_level, e.id, e.name
             ORDER BY p.name, e.name;
         `;
         const [inventory] = await dbPool.query(query);

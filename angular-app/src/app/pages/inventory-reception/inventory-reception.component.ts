@@ -39,7 +39,7 @@ export class InventoryReceptionComponent implements OnInit, AfterViewInit {
   ) {}
 
   ngOnInit(): void {
-    this.providersService.getProviders().subscribe(data => {
+    this.providersService.getAllProviders().subscribe(data => {
       this.providerList = data;
       this.cdr.detectChanges(); 
       const currentUser = this.authService.getCurrentUser();

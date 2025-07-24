@@ -1,84 +1,75 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { DashboardService } from '../../services/dashboard.service';
 import { EntitiesService } from '../../services/entities.service';
-import { FormsModule } from '@angular/forms'; 
 
 @Component({
   selector: 'app-global-inventory',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NgClass],
   templateUrl: './global-inventory.component.html',
 })
 export class GlobalInventoryComponent implements OnInit {
-  inventory: any[] = [];
-  groupedInventory: any = {};
-
-  entities: any[] = [];
-  selectedEntityId: string = 'all';
+  rawInventory: any[] = [];
+  pivotedInventory: any[] = [];
+  collegeHeaders: string[] = [];
   searchTerm: string = '';
 
   constructor(
     private dashboardService: DashboardService,
-    private entitiesService: EntitiesService, 
-    private cdr: ChangeDetectorRef 
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.loadInventory();
-    this.loadEntities();
-  }
-
-  groupInventoryByProduct(): void {
-    this.groupedInventory = this.inventory.reduce((acc, item) => {
-      acc[item.name] = acc[item.name] || [];
-      acc[item.name].push(item);
-      return acc;
-    }, {});
-  }
-
-  loadEntities(): void {
-    this.entitiesService.getEntities().subscribe(data => {
-      this.entities = data;
-      this.cdr.detectChanges();
-    });
   }
 
   loadInventory(): void {
     this.dashboardService.getGlobalInventory().subscribe(data => {
-      this.inventory = data;
-      this.filterAndGroupInventory();
+      this.rawInventory = data;
+      this.processInventoryData();
       this.cdr.detectChanges();
     });
   }
 
-  filterAndGroupInventory(): void {
-    let filteredItems = this.inventory;
-
-    // Primero, filtra por colegio (si se ha seleccionado uno)
-    if (this.selectedEntityId !== 'all') {
-      filteredItems = filteredItems.filter(item => item.entity_id == this.selectedEntityId);
+  processInventoryData(): void {
+    if (this.rawInventory.length === 0) {
+      this.collegeHeaders = [];
+      this.pivotedInventory = [];
+      return;
     }
 
-    // Luego, filtra por el término de búsqueda (si existe)
+    let filteredItems = this.rawInventory;
     if (this.searchTerm.trim() !== '') {
-      filteredItems = filteredItems.filter(item => 
+      filteredItems = this.rawInventory.filter(item =>
         item.name.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
     }
 
-    this.groupedInventory = filteredItems.reduce((acc, item) => {
-      acc[item.name] = acc[item.name] || [];
-      acc[item.name].push(item);
+    // Ahora, el resto del código usa 'filteredItems' en lugar de 'this.rawInventory'
+    const uniqueColleges = [...new Set(filteredItems.map(item => item.entity_name))];
+    this.collegeHeaders = uniqueColleges.sort();
+
+    const groupedByProduct = filteredItems.reduce((acc, item) => {
+      acc[item.name] = acc[item.name] || {};
+      acc[item.name][item.entity_name] = { 
+        stock: item.stock, 
+        min_stock: item.min_stock_level 
+      };
       return acc;
     }, {});
+
+    this.pivotedInventory = Object.keys(groupedByProduct).map(productName => {
+      return {
+        productName: productName,
+        stocksByCollege: groupedByProduct[productName]
+      };
+    });
   }
 
-  onFilterChange(): void {
-    this.filterAndGroupInventory();
-  }
-  
-  getObjectKeys(obj: any) {
-    return Object.keys(obj);
+  // Esta función ahora será llamada por el input de búsqueda
+  onSearchChange(): void {
+    this.processInventoryData();
   }
 }

@@ -14,6 +14,7 @@
             <th class="p-4">Nombre</th>
             <th class="p-4">Categoría</th>
             <th class="p-4">Marca</th>
+            <th class="p-4">Precio</th>
             <th class="p-4">Acciones</th>
           </tr>
         </thead>
@@ -24,6 +25,7 @@
               <td class="p-4">{{ product.name }}</td>
               <td class="p-4">{{ product.category }}</td>
               <td class="p-4">{{ product.brand }}</td>
+              <td class="p-4">{{ product.price | number:'1.0-0' }}</td>
               <td class="p-4">
                 <button (click)="openModal(product)" class="text-blue-400 hover:text-blue-300 mr-4">Editar</button>
                 <button (click)="deleteProduct(product.id)" class="text-red-400 hover:text-red-300">Eliminar</button>
@@ -36,6 +38,25 @@
           }
         </tbody>
       </table>
+    </div>
+
+    <div class="flex justify-between items-center mt-6">
+      <span class="text-sm text-gray-400">
+        Mostrando {{ products.length }} de {{ totalItems }} productos
+      </span>
+      <div class="flex items-center space-x-2">
+        <button (click)="goToPage(currentPage - 1)" 
+                [disabled]="currentPage === 1" 
+                class="px-3 py-1 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-50">
+          Anterior
+        </button>
+        <span class="text-white font-semibold">Página {{ currentPage }} de {{ totalPages }}</span>
+        <button (click)="goToPage(currentPage + 1)" 
+                [disabled]="currentPage === totalPages || totalItems === 0"
+                class="px-3 py-1 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-50">
+          Siguiente
+        </button>
+      </div>
     </div>
   </div>
   

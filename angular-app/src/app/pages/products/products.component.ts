@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductsService } from '../../services/products.service';
 import { ProductFormComponent } from '../../components/product-form/product-form.component';
+import { AuthService } from '../../services/auth.service'; 
 
 @Component({
   selector: 'app-products',
@@ -14,13 +15,16 @@ export class ProductsComponent implements OnInit {
   isModalOpen = false;
   currentProduct: any = {};
 
-  // Necesitamos pasar el ID del usuario logueado al crear/editar
-  // Por ahora, lo dejaremos fijo. Más adelante lo tomaremos de la sesión.
-  private loggedInUserId = 1;
+  // Propiedades de paginación
+  currentPage: number = 1;
+  itemsPerPage: number = 15;
+  totalItems: number = 0;
+
 
   constructor(
     private productsService: ProductsService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService 
   ) {}
 
   ngOnInit(): void {
@@ -28,10 +32,20 @@ export class ProductsComponent implements OnInit {
   }
 
   loadProducts(): void {
-    this.productsService.getProducts().subscribe(data => {
-      this.products = data;
+    this.productsService.getProducts(this.currentPage, this.itemsPerPage).subscribe(response => {
+      this.products = response.data;
+      this.totalItems = response.total;
       this.cdr.detectChanges();
     });
+  }
+
+  goToPage(page: number): void {
+    this.currentPage = page;
+    this.loadProducts();
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.totalItems / this.itemsPerPage);
   }
 
   openModal(product?: any): void {
@@ -44,11 +58,16 @@ export class ProductsComponent implements OnInit {
   }
 
   saveProduct(product: any): void {
-    // Asigna el usuario que crea o actualiza el registro
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      console.error('Error: No se pudo identificar al usuario.');
+      return;
+    }
+
     if (product.id) {
-      product.updated_by = this.loggedInUserId;
+      product.updated_by = currentUser.id;
     } else {
-      product.created_by = this.loggedInUserId;
+      product.created_by = currentUser.id;
     }
     
     const operation = product.id
@@ -60,6 +79,7 @@ export class ProductsComponent implements OnInit {
       this.loadProducts();
     });
   }
+
 
   deleteProduct(productId: number): void {
     if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {

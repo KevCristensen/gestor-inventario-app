@@ -14,6 +14,11 @@ export class ProvidersComponent implements OnInit {
   isModalOpen = false;
   currentProvider: any = {};
 
+  // Propiedades para la paginación
+  currentPage: number = 1;
+  itemsPerPage: number = 15;
+  totalItems: number = 0;
+
   constructor(
     private providersService: ProvidersService,
     private cdr: ChangeDetectorRef
@@ -24,13 +29,24 @@ export class ProvidersComponent implements OnInit {
   }
 
   loadProviders(): void {
-    this.providersService.getProviders().subscribe({
-      next: (data) => {
-        this.providers = data;
+    this.providersService.getProviders(this.currentPage, this.itemsPerPage).subscribe({
+      next: (response) => {
+        this.providers = response.data;
+        this.totalItems = response.total;
         this.cdr.detectChanges();
       },
       error: (err) => console.error('Error al cargar proveedores:', err)
     });
+  }
+
+  // Métodos para cambiar de página
+  goToPage(page: number): void {
+    this.currentPage = page;
+    this.loadProviders();
+  }
+  
+  get totalPages(): number {
+    return Math.ceil(this.totalItems / this.itemsPerPage);
   }
 
   openModal(provider?: any): void {

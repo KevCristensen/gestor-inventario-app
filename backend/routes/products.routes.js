@@ -6,7 +6,7 @@ router.post('/', async (req, res) => {
     try {
         const {
             barcode, name, description, unit_of_measure,
-            category, brand, weight, created_by, min_stock_level
+            category, brand, weight, created_by, min_stock_level, price
         } = req.body;
 
         if (!barcode || !name) {
@@ -15,9 +15,9 @@ router.post('/', async (req, res) => {
 
         const [result] = await dbPool.query(
             `INSERT INTO products 
-             (barcode, name, description, unit_of_measure, category, brand, weight, created_by, updated_by, min_stock_level)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [barcode, name, description, unit_of_measure, category, brand, weight, created_by, created_by, min_stock_level]
+             (barcode, name, description, unit_of_measure, category, brand, weight, created_by, updated_by, min_stock_level, price)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [barcode, name, description, unit_of_measure, category, brand, weight, created_by, created_by, min_stock_level, price]
         );
         res.status(201).json({ id: result.insertId, ...req.body });
     } catch (error) {
@@ -26,14 +26,39 @@ router.post('/', async (req, res) => {
     }
 });
 
+
+// LEER todos los productos (CON paginación)
 router.get('/', async (req, res) => {
     try {
-        const [products] = await dbPool.query('SELECT * FROM products');
-        res.json(products);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 15;
+        const offset = (page - 1) * limit;
+
+        const [products] = await dbPool.query(
+            'SELECT * FROM products ORDER BY name ASC LIMIT ? OFFSET ?',
+            [limit, offset]
+        );
+        const [[{ total }]] = await dbPool.query('SELECT COUNT(*) as total FROM products');
+
+        res.json({
+            data: products,
+            total: total
+        });
     } catch (error) {
         res.status(500).json({ error: 'Error al obtener los productos.' });
     }
 });
+
+//LEER TODOS los productos (sin paginación, para listas)
+router.get('/all/list', async (req, res) => {
+    try {
+        const [products] = await dbPool.query('SELECT id, name, barcode FROM products ORDER BY name ASC');
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener la lista de productos.' });
+    }
+});
+
 
 // LEER un producto por código de barras
 router.get('/barcode/:barcode', async (req, res) => {
@@ -55,15 +80,15 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         const {
             name, description, unit_of_measure, category,
-            brand, weight, updated_by, min_stock_level
+            brand, weight, updated_by, min_stock_level, price
         } = req.body;
         
         await dbPool.query(
             `UPDATE products SET 
              name = ?, description = ?, unit_of_measure = ?, category = ?, 
-             brand = ?, weight = ?, updated_by = ?, min_stock_level = ? 
+             brand = ?, weight = ?, updated_by = ?, min_stock_level = ? , price = ?
              WHERE id = ?`,
-            [name, description, unit_of_measure, category, brand, weight, updated_by, min_stock_level, id]
+            [name, description, unit_of_measure, category, brand, weight, updated_by, min_stock_level, price, id,]
         );
         res.json({ message: 'Producto actualizado exitosamente.' });
     } catch (error) {

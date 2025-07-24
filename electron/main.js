@@ -34,6 +34,7 @@ const dashboardRoutes = require('../backend/routes/dashboard.routes');
 const inventoryRoutes = require('../backend/routes/inventory.routes');
 const reportsRoutes = require('../backend/routes/reports.routes');   
 const entitiesRoutes = require('../backend/routes/entities.routes'); 
+const analysisRoutes = require('../backend/routes/analysis.routes');
 
 let mainWindow;
 
@@ -80,6 +81,7 @@ async function startServer() {
     backendApp.use('/api/inventory', inventoryRoutes); 
     backendApp.use('/api/reports', reportsRoutes); 
     backendApp.use('/api/entities', entitiesRoutes);
+    backendApp.use('/api/analysis', analysisRoutes); 
 
     const PORT = 3000;
     backendApp.listen(PORT, () => {
@@ -154,5 +156,23 @@ ipcMain.on('print-receipt', (event, receiptData) => {
 
     printWindow.webContents.on('did-finish-load', () => {
         printWindow.webContents.send('receipt-data', receiptData);
+    });
+});
+
+ipcMain.on('print-analysis', (event, analysisData) => {
+    const printWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        show: true,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    });
+
+    printWindow.loadFile(path.join(__dirname, '../analysis-template.html'));
+
+    printWindow.webContents.on('did-finish-load', () => {
+        printWindow.webContents.send('analysis-data', analysisData);
     });
 });

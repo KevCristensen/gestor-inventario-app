@@ -1,0 +1,71 @@
+<div class="text-white">
+    <h1 class="text-3xl font-bold mb-6">Análisis de Consumo</h1>
+  
+    <div class="bg-gray-800 p-4 rounded-lg mb-6">
+      <div class="flex flex-wrap items-end gap-4">
+        <div class="flex items-center gap-2">
+          <button (click)="setPeriod('today')" class="bg-gray-700 hover:bg-gray-600 text-sm py-2 px-3 rounded-lg">Hoy</button>
+          <button (click)="setPeriod('this_month')" class="bg-gray-700 hover:bg-gray-600 text-sm py-2 px-3 rounded-lg">Este Mes</button>
+          <button (click)="setPeriod('last_month')" class="bg-gray-700 hover:bg-gray-600 text-sm py-2 px-3 rounded-lg">Mes Pasado</button>
+        </div>
+        <div class="border-l border-gray-600 h-10 mx-2"></div>
+        
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Bodega</label>
+          <select [(ngModel)]="selectedEntityId" (change)="onFilterChange()" class="bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+            <option value="all">Todas las Bodegas</option>
+            @for(entity of entities; track entity.id) { <option [value]="entity.id">{{entity.name}}</option> }
+          </select>
+        </div>
+  
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Desde</label>
+          <input type="date" [(ngModel)]="startDate" (change)="onFilterChange()" class="bg-gray-700 p-2 rounded-lg border border-gray-600 text-gray-200" [style.color-scheme]="'dark'">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Hasta</label>
+          <input type="date" [(ngModel)]="endDate" (change)="onFilterChange()" class="bg-gray-700 p-2 rounded-lg border border-gray-600 text-gray-200" [style.color-scheme]="'dark'">
+        </div>
+        
+        <button (click)="printReport()" [disabled]="reportData.length === 0" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2.5 px-6 rounded-lg disabled:bg-gray-500">
+          Imprimir
+        </button>
+      </div>
+    </div>
+  
+    <div class="bg-gray-800 rounded-lg shadow p-6">
+      <table class="w-full text-left">
+        <thead class="border-b border-gray-600">
+          <tr>
+            <th class="p-4">Producto</th>
+            <th class="p-4">Bodega</th>
+            <th class="p-4 text-right">Total Salidas</th>
+            <th class="p-4 text-right">Valor del Consumo</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of reportData; track $index) {
+            <tr class="border-b border-gray-700">
+              <td class="p-4">{{ item.productName }}</td>
+              <td class="p-4 text-gray-400">{{ item.entityName }}</td> <td class="p-4 text-right font-mono text-xl">{{ item.totalExits }}</td>
+              <td class="p-4 text-right font-mono text-lg text-green-400">${{ item.totalValue | number:'1.0-0' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="p-8 text-center text-gray-500">
+                {{ isLoading ? 'Cargando datos...' : 'No se encontraron salidas para el período seleccionado.' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+        <tfoot class="border-t-2 border-gray-500">
+          <tr>
+            <td colspan="3" class="p-4 font-bold text-right text-lg">Total General</td>
+            <td class="p-4 text-right font-mono text-xl text-green-400">
+              ${{ totalConsumptionValue | number:'1.0-0' }}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>

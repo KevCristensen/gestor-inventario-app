@@ -19,13 +19,38 @@ router.post('/', async (req, res) => {
     }
 });
 
-// LEER todos los proveedores
+// LEER todos los proveedores (con paginación)
 router.get('/', async (req, res) => {
     try {
-        const [providers] = await dbPool.query('SELECT * FROM providers WHERE is_active = TRUE');
-        res.json(providers);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 15;
+        const offset = (page - 1) * limit;
+
+        // Consulta para obtener los proveedores de la página actual
+        const [providers] = await dbPool.query(
+            'SELECT * FROM providers WHERE is_active = TRUE ORDER BY name ASC LIMIT ? OFFSET ?',
+            [limit, offset]
+        );
+
+        // Consulta para obtener el número total de proveedores
+        const [[{ total }]] = await dbPool.query('SELECT COUNT(*) as total FROM providers WHERE is_active = TRUE');
+
+        res.json({
+            data: providers,
+            total: total
+        });
     } catch (error) {
         res.status(500).json({ error: 'Error al obtener los proveedores.' });
+    }
+});
+
+// LEER TODOS los proveedores (sin paginación, para listas)
+router.get('/all/list', async (req, res) => {
+    try {
+        const [providers] = await dbPool.query('SELECT id, name FROM providers WHERE is_active = TRUE ORDER BY name ASC');
+        res.json(providers);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener la lista de proveedores.' });
     }
 });
 

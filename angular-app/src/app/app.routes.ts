@@ -9,6 +9,7 @@ import { InventoryReceptionComponent } from './pages/inventory-reception/invento
 import { InventoryExitComponent } from './pages/inventory-exit/inventory-exit.component';
 import { ReportsComponent } from './pages/reports/reports.component';
 import { GlobalInventoryComponent } from './pages/global-inventory/global-inventory.component';
+import { ConsumptionAnalysisComponent } from './pages/consumption-analysis/consumption-analysis.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -18,14 +19,13 @@ export const routes: Routes = [
         canActivate: [authGuard],
         children: [ // 3. Las páginas internas son "hijas" del layout
             { path: '', component: DashboardComponent }, // La ruta vacía (/dashboard) muestra el Dashboard
-            { path: 'providers', component: ProvidersComponent }, // 2. Añade la ruta hija
+            { path: 'providers', component: ProvidersComponent }, 
             { path: 'products', component: ProductsComponent }, 
             { path: 'reception', component: InventoryReceptionComponent }, 
             { path: 'exit', component: InventoryExitComponent },
             { path: 'reports', component: ReportsComponent },
             { path: 'global-inventory', component: GlobalInventoryComponent },
-            // { path: 'products', component: ProductsComponent }, // <-- Añadiremos esto después
-            // { path: 'providers', component: ProvidersComponent }, // <-- Añadiremos esto después
+            { path: 'analysis', component: ConsumptionAnalysisComponent },
         ]
     },
     { path: '', redirectTo: '/dashboard', pathMatch: 'full' }, 
