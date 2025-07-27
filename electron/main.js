@@ -145,22 +145,23 @@ ipcMain.on('get-app-version', (event) => {
     event.sender.send('app-version', { version: app.getVersion() });
 });
 
-ipcMain.on('print-receipt', (event, receiptData) => {
+ipcMain.on('print-receipt', async (event, receiptData) => {
     const printWindow = new BrowserWindow({
         width: 800,
         height: 600,
         show: true,
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload-receipt.js') // Preload para recibos de alimentos
         }
     });
 
-    printWindow.loadFile(path.join(__dirname, '../receipt-template.html'));
-
-    printWindow.webContents.on('did-finish-load', () => {
+    try {
+        await printWindow.loadFile(path.join(__dirname, '../receipt-template.html'));
         printWindow.webContents.send('receipt-data', receiptData);
-    });
+    } catch (error) {
+        console.error('Fallo al cargar la ventana de impresión de recibo:', error);
+    }
 });
 
 ipcMain.on('print-analysis', (event, analysisData) => {
@@ -181,20 +182,21 @@ ipcMain.on('print-analysis', (event, analysisData) => {
     });
 });
 
-ipcMain.on('print-asset-movement', (event, movementData) => {
+ipcMain.on('print-asset-movement', async (event, movementData) => {
     const printWindow = new BrowserWindow({
         width: 800,
         height: 600,
         show: true,
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload-print.js')
         }
     });
 
-    printWindow.loadFile(path.join(__dirname, '../asset-movement-template.html'));
-
-    printWindow.webContents.on('did-finish-load', () => {
+    try {
+        await printWindow.loadFile(path.join(__dirname, '../asset-movement-template.html'));
         printWindow.webContents.send('asset-movement-data', movementData);
-    });
+    } catch (error) {
+        console.error('Fallo al cargar la ventana de impresión de activos:', error);
+    }
 });

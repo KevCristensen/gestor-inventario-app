@@ -29,6 +29,24 @@ router.get('/', async (req, res) => {
     }
 });
 
+// LEER activos CON STOCK por entidad
+router.get('/by-entity/:entityId', async (req, res) => {
+    try {
+        const { entityId } = req.params;
+        const query = `
+            SELECT a.id, a.name 
+            FROM assets a
+            JOIN asset_inventory ai ON a.id = ai.asset_id
+            WHERE ai.entity_id = ? AND ai.quantity > 0
+            ORDER BY a.name ASC;
+        `;
+        const [assets] = await dbPool.query(query, [entityId]);
+        res.json(assets);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener los activos de la entidad.' });
+    }
+});
+
 // ACTUALIZAR un activo
 router.put('/:id', async (req, res) => {
     try {
@@ -54,6 +72,7 @@ router.delete('/:id', async (req, res) => {
         res.status(500).json({ error: 'Error al eliminar el activo.' });
     }
 });
+
 
 
 router.get('/inventory', async (req, res) => {

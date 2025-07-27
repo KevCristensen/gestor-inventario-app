@@ -16,7 +16,6 @@ router.post('/', async (req, res) => {
         connection = await dbPool.getConnection();
         await connection.beginTransaction();
 
-        // Iteramos sobre la lista de items que nos envía el frontend
         for (const item of items) {
             // Registrar el movimiento en el historial
             await connection.query(
@@ -26,20 +25,20 @@ router.post('/', async (req, res) => {
                 [item.asset_id, item.quantity, type, from_entity_id, to_entity_id, event_details, user_id]
             );
 
-            // Actualizar el inventario de la bodega de origen
-            if (from_entity_id) {
+           // Lógica de inventario actualizada
+           if (type === 'salida_evento' || type === 'baja' || type === 'traslado_salida') {
+                // Estos tipos RESTAN del inventario de origen
                 await connection.query(
-                    `UPDATE asset_inventory SET quantity = quantity - ? WHERE asset_id = ? AND entity_id = ?`,
+                    'UPDATE asset_inventory SET quantity = quantity - ? WHERE asset_id = ? AND entity_id = ?',
                     [item.quantity, item.asset_id, from_entity_id]
                 );
             }
-
-            // Actualizar el inventario de la bodega de destino
-            if (to_entity_id) {
+            
+            if (type === 'entrada_inicial' || type === 'retorno_evento' || type === 'traslado_entrada') {
+                // Estos tipos SUMAN al inventario de destino
                 await connection.query(
                     `INSERT INTO asset_inventory (asset_id, entity_id, quantity)
-                     VALUES (?, ?, ?)
-                     ON DUPLICATE KEY UPDATE quantity = quantity + ?`,
+                    VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE quantity = quantity + ?`,
                     [item.asset_id, to_entity_id, item.quantity, item.quantity]
                 );
             }
@@ -47,7 +46,6 @@ router.post('/', async (req, res) => {
 
         await connection.commit();
         res.status(201).json({ message: 'Movimiento registrado exitosamente.' });
-
     } catch (error) {
         if (connection) await connection.rollback();
         console.error("Error en la transacción de movimiento de activos:", error);
@@ -79,6 +77,24 @@ router.get('/', async (req, res) => {
         res.json(movements);
     } catch (error) {
         res.status(500).json({ error: 'Error al obtener el historial de movimientos.' });
+    }
+});
+
+// GET /api/assets/by-entity/:entityId
+router.get('/by-entity/:entityId', async (req, res) => {
+    try {
+        const { entityId } = req.params;
+        const query = `
+            SELECT a.id, a.name 
+            FROM assets a
+            JOIN asset_inventory ai ON a.id = ai.asset_id
+            WHERE ai.entity_id = ? AND ai.quantity > 0
+            ORDER BY a.name ASC;
+        `;
+        const [assets] = await dbPool.query(query, [entityId]);
+        res.json(assets);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener los activos de la entidad.' });
     }
 });
 

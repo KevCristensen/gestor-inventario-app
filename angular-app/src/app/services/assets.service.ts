@@ -29,4 +29,8 @@ export class AssetsService {
   getInventory(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/inventory`);
   }
+
+  getAssetsByEntity(entityId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/by-entity/${entityId}`);
+  }
 }

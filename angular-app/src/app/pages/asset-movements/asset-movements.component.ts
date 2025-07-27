@@ -15,7 +15,8 @@ import { NotificationService } from '../../services/notification.service';
 })
 export class AssetMovementsComponent implements OnInit {
   movements: any[] = [];
-  assets: any[] = [];
+  allAssets: any[] = []; // Lista completa de activos para el catálogo
+  availableAssets: any[] = []; // Lista de activos CON STOCK en la bodega origen
   entities: any[] = [];
   currentUserEntityId: number | null = null;
   
@@ -50,6 +51,9 @@ export class AssetMovementsComponent implements OnInit {
       this.currentUserEntityId = currentUser.entity_id;
     }
     this.loadInitialData();
+    
+    // Añade esta línea para configurar el formulario al inicio
+    this.onMovementTypeChange(); 
   }
 
   loadInitialData(): void {
@@ -57,16 +61,30 @@ export class AssetMovementsComponent implements OnInit {
       this.movements = data;
       this.cdr.detectChanges();
     });
-    this.assetsService.getAssets().subscribe(data => this.assets = data);
+    this.assetsService.getAssets().subscribe(data => this.allAssets = data);
     this.entitiesService.getEntities().subscribe(data => this.entities = data);
   }
 
   onMovementTypeChange(): void {
-    if (this.movementData.type === 'entrada_inicial' || this.movementData.type === 'retorno_evento') {
-      this.movementData.to_entity_id = this.currentUserEntityId;
-    }
-    if (this.movementData.type === 'salida_evento' || this.movementData.type === 'baja') {
-      this.movementData.from_entity_id = this.currentUserEntityId;
+    // Limpia las selecciones anteriores para evitar errores
+    this.movementData.from_entity_id = null;
+    this.movementData.to_entity_id = null;
+    this.movementData.event_details = '';
+    this.availableAssets = [];
+    this.itemToAdd.asset_id = null;
+    this.movementData.items = []; // <-- 1. AÑADE ESTA LÍNEA
+  }
+
+
+  onOriginChange(entityId: number | null): void {
+    this.availableAssets = [];
+    this.itemToAdd.asset_id = null;
+    this.movementData.items = []; // <-- 2. AÑADE ESTA LÍNEA
+    if (entityId) {
+      // Carga solo los activos que tienen stock en la bodega seleccionada
+      this.assetsService.getAssetsByEntity(entityId).subscribe(data => {
+        this.availableAssets = data;
+      });
     }
   }
 
@@ -76,9 +94,10 @@ export class AssetMovementsComponent implements OnInit {
       return;
     }
     
-    const asset = this.assets.find(a => a.id == this.itemToAdd.asset_id);
+    // 1. Cambia 'this.assets' por 'this.allAssets'
+    // 2. Añade el tipo (a: any)
+    const asset = this.allAssets.find((a: any) => a.id == this.itemToAdd.asset_id);
 
-    // --- AÑADE ESTA VALIDACIÓN ---
     if (!asset) {
       this.notificationService.showError('Activo no encontrado.');
       return;
@@ -104,7 +123,10 @@ export class AssetMovementsComponent implements OnInit {
       this.notificationService.showError('No se pudo identificar al usuario.');
       return;
     }
-    const payload = { ...this.movementData, user_id: currentUser.id };
+    const payload = {
+      ...this.movementData,
+      user_id: currentUser.id
+    };
     if (payload.type === 'salida_evento') payload.to_entity_id = null;
     if (payload.type === 'retorno_evento') payload.from_entity_id = null;
     if (payload.type === 'baja') payload.to_entity_id = null;
@@ -134,8 +156,8 @@ export class AssetMovementsComponent implements OnInit {
 
   // FUNCIÓN CORREGIDA
   printMovement(): void {
-    const fromEntity = this.entities.find(e => e.id === this.movementData.from_entity_id);
-    const toEntity = this.entities.find(e => e.id === this.movementData.to_entity_id);
+    const fromEntity = this.entities.find(e => e.id == this.movementData.from_entity_id);
+    const toEntity = this.entities.find(e => e.id == this.movementData.to_entity_id);
 
     const receiptData = {
       ...this.movementData,

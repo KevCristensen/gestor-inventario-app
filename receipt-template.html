@@ -92,10 +92,10 @@
     <div id="receipt-content">
         </div>
 
-    <script>
-        const { ipcRenderer } = require('electron');
-        ipcRenderer.on('receipt-data', (event, data) => {
-            const container = document.getElementById('receipt-content');
+        <script>
+            window.receiptAPI.onData((data) => {
+                const container = document.getElementById('receipt-content');
+                if (container) {
             
             let itemsHtml = '';
             data.items.forEach(item => {
@@ -151,7 +151,7 @@
             `;
 
             container.innerHTML = html;
-            ipcRenderer.send('ready-to-print');
+            }
         });
     </script>
 </body>
