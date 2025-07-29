@@ -37,4 +37,17 @@ export class AnalysisService {
 
     return this.http.get<any[]>(`${this.apiUrl}/monthly-consumption`, { params });
   }
+
+  getLossAndDamageReport(startDate: string, endDate: string, entityId?: string): Observable<any[]> {
+    let params = new HttpParams()
+      .set('startDate', startDate)
+      .set('endDate', endDate);
+    
+    if (entityId && entityId !== 'all') {
+      params = params.append('entityId', entityId);
+    }
+
+    return this.http.get<any[]>(`${this.apiUrl}/loss-damage`, { params });
+  }
+
 }

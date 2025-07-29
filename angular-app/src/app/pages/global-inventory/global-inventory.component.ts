@@ -47,13 +47,19 @@ export class GlobalInventoryComponent implements OnInit {
       );
     }
 
-    // Ahora, el resto del código usa 'filteredItems' en lugar de 'this.rawInventory'
     const uniqueColleges = [...new Set(filteredItems.map(item => item.entity_name))];
     this.collegeHeaders = uniqueColleges.sort();
 
     const groupedByProduct = filteredItems.reduce((acc, item) => {
-      acc[item.name] = acc[item.name] || {};
-      acc[item.name][item.entity_name] = { 
+      // Initialize if it's the first time seeing this product
+      if (!acc[item.name]) {
+        acc[item.name] = {
+          barcode: item.barcode, // Store the barcode once
+          stocksByCollege: {}
+        };
+      }
+      // Add the stock for the current college
+      acc[item.name].stocksByCollege[item.entity_name] = { 
         stock: item.stock, 
         min_stock: item.min_stock_level 
       };
@@ -63,7 +69,8 @@ export class GlobalInventoryComponent implements OnInit {
     this.pivotedInventory = Object.keys(groupedByProduct).map(productName => {
       return {
         productName: productName,
-        stocksByCollege: groupedByProduct[productName]
+        barcode: groupedByProduct[productName].barcode,
+        stocksByCollege: groupedByProduct[productName].stocksByCollege
       };
     });
   }

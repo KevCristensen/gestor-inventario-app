@@ -28,22 +28,22 @@ export class AuthService {
 
   private setSession(authResult: any) {
     if (this.isBrowser) {
-      localStorage.setItem(this.TOKEN_KEY, authResult.token);
-      localStorage.setItem(this.USER_KEY, JSON.stringify(authResult.user)); // Guarda el usuario
+      sessionStorage.setItem(this.TOKEN_KEY, authResult.token);
+      sessionStorage.setItem(this.USER_KEY, JSON.stringify(authResult.user)); // Guarda el usuario
     }
   }
 
   logout() {
     if (this.isBrowser) {
-      localStorage.removeItem(this.TOKEN_KEY);
-      localStorage.removeItem(this.USER_KEY); // Borra el usuario
+      sessionStorage.removeItem(this.TOKEN_KEY);
+      sessionStorage.removeItem(this.USER_KEY); // Borra el usuario
     }
   }
 
   // Nuevo método para obtener los datos del usuario logueado
   getCurrentUser(): any | null {
     if (this.isBrowser) {
-      const user = localStorage.getItem(this.USER_KEY);
+      const user = sessionStorage.getItem(this.USER_KEY);
       return user ? JSON.parse(user) : null;
     }
     return null;
@@ -56,14 +56,14 @@ export class AuthService {
 
   getToken(): string | null {
     if (this.isBrowser) {
-      return localStorage.getItem(this.TOKEN_KEY);
+      return sessionStorage.getItem(this.TOKEN_KEY);
     }
     return null;
   }
 
   isLoggedIn(): boolean {
     if (this.isBrowser) { // <-- Añade la comprobación
-      return !!localStorage.getItem(this.TOKEN_KEY);
+      return !!sessionStorage.getItem(this.TOKEN_KEY);
     }
     return false; // En el servidor, nunca se está logueado
   }

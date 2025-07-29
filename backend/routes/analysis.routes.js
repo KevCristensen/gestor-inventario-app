@@ -82,4 +82,48 @@ router.get('/consumption-details', async (req, res) => {
     }
 });
 
+router.get('/loss-damage', async (req, res) => {
+    try {
+        const { startDate, endDate, entityId } = req.query;
+        if (!startDate || !endDate) {
+            return res.status(400).json({ error: 'Las fechas de inicio y fin son requeridas.' });
+        }
+
+        let query = `
+            SELECT 
+                a.name as assetName,
+                e.name as entityName,
+                SUM(CASE WHEN im.type = 'baja_perdida' THEN im.quantity ELSE 0 END) as totalLoss,
+                SUM(CASE WHEN im.type = 'baja_dano' THEN im.quantity ELSE 0 END) as totalDamage
+            FROM 
+                asset_movements im
+            JOIN 
+                assets a ON im.asset_id = a.id
+            JOIN 
+                entities e ON im.from_entity_id = e.id
+            WHERE 
+                (im.type = 'baja_perdida' OR im.type = 'baja_dano') AND
+                im.movement_date BETWEEN ? AND ?
+        `;
+        const params = [startDate, `${endDate} 23:59:59`];
+
+        if (entityId && entityId !== 'all') {
+            query += ' AND im.from_entity_id = ?';
+            params.push(entityId);
+        }
+
+        query += ' GROUP BY a.name, e.name ORDER BY a.name, e.name;';
+
+        const [results] = await dbPool.query(query, params);
+        res.json(results);
+    } catch (error) {
+        console.error("Error al generar el reporte de pérdidas y daños:", error);
+        res.status(500).json({ error: 'Error al generar el reporte.' });
+    }
+});
+
+module.exports = router;
+
+
+
 module.exports = router;

@@ -13,6 +13,8 @@ import { ConsumptionAnalysisComponent } from './pages/consumption-analysis/consu
 import { AssetsComponent } from './pages/assets/assets.component';
 import { AssetMovementsComponent } from './pages/asset-movements/asset-movements.component';
 import { AssetInventoryComponent } from './pages/asset-inventory/asset-inventory.component';
+import { ProductLookupComponent } from './pages/product-lookup/product-lookup.component';
+import { LossDamageReportComponent } from './pages/loss-damage-report/loss-damage-report.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -29,9 +31,11 @@ export const routes: Routes = [
             { path: 'reports', component: ReportsComponent },
             { path: 'global-inventory', component: GlobalInventoryComponent },
             { path: 'analysis', component: ConsumptionAnalysisComponent },
+            { path: 'loss-damage-report', component: LossDamageReportComponent },
             { path: 'assets', component: AssetsComponent },
             { path: 'asset-movements', component: AssetMovementsComponent },
             { path: 'asset-inventory', component: AssetInventoryComponent }, 
+            { path: 'product-lookup', component: ProductLookupComponent },     
         ]
     },
     { path: '', redirectTo: '/dashboard', pathMatch: 'full' }, 

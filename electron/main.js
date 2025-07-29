@@ -4,11 +4,11 @@ const url = require('url');
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 
-// --- Single Instance Lock (Buena práctica) ---
+// --- Single Instance Lock ---
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  app.on('second-instance', (event, commandLine, workingDirectory) => {
+  app.on('second-instance', () => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
@@ -40,7 +40,6 @@ const assetMovementsRoutes = require('../backend/routes/asset-movements.routes')
 
 let mainWindow;
 
-// 1. La función ahora recibe la información de la versión
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1200,
@@ -63,27 +62,29 @@ function createWindow() {
 
     mainWindow.loadURL(startURL);
 
+    if (!app.isPackaged) {
+     // mainWindow.webContents.openDevTools();
+    }
 
     mainWindow.on('closed', function () {
         mainWindow = null;
     });
 }
 
-// --- Función startServer (Re-activada) ---
 async function startServer() {
     const backendApp = express();
     backendApp.use(cors());
     backendApp.use(express.json());
     
-    backendApp.use('/api/providers', isAdmin, providersRoutes);
-    backendApp.use('/api/products', isAdmin, productsRoutes);
+    backendApp.use('/api/providers', providersRoutes);
+    backendApp.use('/api/products', productsRoutes);
     backendApp.use('/api/auth', authRoutes);
     backendApp.use('/api/receptions', receptionsRoutes); 
     backendApp.use('/api/dashboard', dashboardRoutes);
     backendApp.use('/api/inventory', inventoryRoutes); 
     backendApp.use('/api/reports', reportsRoutes); 
     backendApp.use('/api/entities', entitiesRoutes);
-    backendApp.use('/api/analysis', analysisRoutes); 
+    backendApp.use('/api/analysis', analysisRoutes);
     backendApp.use('/api/assets', isAdmin, assetsRoutes);
     backendApp.use('/api/asset-movements', assetMovementsRoutes); 
 
@@ -94,14 +95,13 @@ async function startServer() {
     });
 }
 
-// --- NUEVA FUNCIÓN PARA MANEJAR ACTUALIZACIONES ---
 function handleUpdates() {
     autoUpdater.on('update-available', (info) => {
         log.info('Actualización disponible.', info);
         dialog.showMessageBox({
             type: 'info',
             title: 'Actualización Disponible',
-            message: `Hay una nueva versión (${info.version}) disponible. ¿Deseas descargarla y reiniciar la aplicación ahora?`,
+            message: `Hay una nueva versión (${info.version}) disponible. ¿Deseas descargarla ahora?`,
             buttons: ['Sí', 'No']
         }).then(result => {
             if (result.response === 0) {
@@ -111,14 +111,22 @@ function handleUpdates() {
     });
 
     autoUpdater.on('update-downloaded', (info) => {
-        log.info('Actualización descargada. Se instalará al salir.');
-        autoUpdater.quitAndInstall();
+        log.info('Actualización descargada. Se instalará al reiniciar.');
+        dialog.showMessageBox({
+            type: 'info',
+            title: 'Actualización Lista',
+            message: `La nueva versión ha sido descargada. Reinicia la aplicación para instalarla.`,
+            buttons: ['Reiniciar Ahora']
+        }).then(() => {
+            autoUpdater.quitAndInstall();
+        });
     });
 
     autoUpdater.on('error', (err) => {
         log.error('Error en el auto-updater. ' + err);
     });
     
+    // Inicia la búsqueda de actualizaciones
     autoUpdater.checkForUpdates();
 }
 
@@ -127,7 +135,6 @@ app.on('ready', async () => {
     createWindow();
     handleUpdates(); 
 });
-
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
@@ -198,5 +205,24 @@ ipcMain.on('print-asset-movement', async (event, movementData) => {
         printWindow.webContents.send('asset-movement-data', movementData);
     } catch (error) {
         console.error('Fallo al cargar la ventana de impresión de activos:', error);
+    }
+});
+
+ipcMain.on('print-loss-damage-report', async (event, reportData) => {
+    const printWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        show: true,
+        webPreferences: {
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload-loss-damage.js') // Usa el nuevo preload
+        }
+    });
+
+    try {
+        await printWindow.loadFile(path.join(__dirname, '../loss-damage-template.html'));
+        printWindow.webContents.send('loss-damage-data', reportData); // Usa el canal correcto
+    } catch (error) {
+        console.error('Fallo al cargar la ventana de impresión:', error);
     }
 });

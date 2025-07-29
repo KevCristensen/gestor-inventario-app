@@ -33,4 +33,8 @@ export class ProductsService {
   getProductByBarcode(barcode: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/barcode/${barcode}`);
   }
+  
+  lookupProductByBarcode(barcode: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/lookup/${barcode}`);
+  }
 }

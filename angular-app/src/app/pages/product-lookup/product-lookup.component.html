@@ -1,0 +1,80 @@
+<div class="text-white space-y-8">
+    <h1 class="text-3xl font-bold">Testear Código de Barras</h1>
+  
+    <!-- Área de Escaneo -->
+    <div class="bg-gray-800 rounded-lg shadow p-6">
+      <label for="barcode-scanner" class="block mb-2 text-lg font-medium text-gray-300">Escanear Producto</label>
+      <input 
+        type="text" 
+        id="barcode-scanner"
+        #barcodeInput
+        placeholder="Esperando código..."
+        (keyup.enter)="onBarcodeScanned(barcodeInput.value); barcodeInput.value = ''"
+        class="w-full p-4 text-xl bg-gray-700 rounded-lg border border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+      >
+    </div>
+  
+    <!-- Resultado -->
+    @if (isLoading) {
+      <div class="bg-gray-800 rounded-lg shadow p-8 text-center text-gray-400">Buscando...</div>
+    } @else if (lookupResult) {
+      <!-- Detalles del Producto -->
+      <div class="bg-gray-800 rounded-lg shadow p-8">
+        <h2 class="text-2xl font-bold text-blue-400 mb-4">{{ lookupResult.productDetails.name }}</h2>
+        <div class="grid grid-cols-2 gap-4 text-gray-300">
+          <p><strong>Código:</strong> {{ lookupResult.productDetails.barcode }}</p>
+          <p><strong>Categoría:</strong> {{ lookupResult.productDetails.category || 'N/A' }}</p>
+          <p><strong>Marca:</strong> {{ lookupResult.productDetails.brand || 'N/A' }}</p>
+          <p><strong>Precio:</strong> ${{ lookupResult.productDetails.price | number:'1.0-0' }}</p>
+        </div>
+      </div>
+  
+      <!-- Stock por Bodega -->
+      <div class="bg-gray-800 rounded-lg shadow p-6">
+        <h3 class="text-xl font-bold mb-4">Stock Actual por Bodega</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          @for(stock of lookupResult.stockDetails; track stock.entity_name) {
+            <div class="bg-gray-700 p-4 rounded-lg text-center">
+              <p class="text-gray-400">{{ stock.entity_name }}</p>
+              <p class="text-2xl font-bold">{{ stock.stock }}</p>
+            </div>
+          }
+        </div>
+      </div>
+  
+      <!-- Últimos Movimientos -->
+      <div class="bg-gray-800 rounded-lg shadow p-6">
+        <h3 class="text-xl font-bold mb-4">Últimos Movimientos</h3>
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-gray-600">
+            <tr>
+              <th class="p-2">Fecha</th>
+              <th class="p-2">Tipo</th>
+              <th class="p-2 text-center">Cantidad</th>
+              <th class="p-2">Bodega</th>
+              <th class="p-2">Usuario</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(move of lookupResult.movements; track move.id) {
+              <tr class="border-b border-gray-700">
+                <td class="p-2">{{ move.movement_timestamp | date:'dd/MM/yy HH:mm' }}</td>
+                <td class="p-2 capitalize">{{ move.type.replace('_', ' ') }}</td>
+                <td class="p-2 text-center font-mono" [class.text-green-400]="move.type.includes('entrada')" [class.text-red-400]="move.type.includes('salida') || move.type.includes('baja')">
+                  {{ move.type.includes('entrada') ? '+' : '-' }}{{ move.quantity }}
+                </td>
+                <td class="p-2">{{ move.entity_name }}</td>
+                <td class="p-2">{{ move.user_name }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="p-4 text-center text-gray-500">Sin movimientos recientes.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="bg-gray-800 rounded-lg shadow p-8 text-center text-gray-500">
+        Los detalles del producto aparecerán aquí.
+      </div>
+    }
+  </div>

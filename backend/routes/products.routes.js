@@ -109,3 +109,45 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
+
+router.get('/lookup/:barcode', async (req, res) => {
+    try {
+        const { barcode } = req.params;
+        const [productRows] = await dbPool.query('SELECT * FROM products WHERE barcode = ?', [barcode]);
+
+        if (productRows.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado.' });
+        }
+        const product = productRows[0];
+
+        // Obtener stock por bodega
+        const [stockByEntity] = await dbPool.query(`
+            SELECT e.name as entity_name, 
+                   COALESCE(SUM(CASE WHEN im.type LIKE 'entrada%' THEN im.quantity ELSE -im.quantity END), 0) as stock
+            FROM entities e
+            LEFT JOIN inventory_movements im ON e.id = im.entity_id AND im.product_id = ?
+            GROUP BY e.id, e.name
+            ORDER BY e.name;
+        `, [product.id]);
+
+        // Obtener los últimos 5 movimientos
+        const [lastMovements] = await dbPool.query(`
+            SELECT im.*, u.name as user_name, e.name as entity_name
+            FROM inventory_movements im
+            JOIN users u ON im.user_id = u.id
+            JOIN entities e ON im.entity_id = e.id
+            WHERE im.product_id = ?
+            ORDER BY im.movement_timestamp DESC
+            LIMIT 5;
+        `, [product.id]);
+
+        res.json({
+            productDetails: product,
+            stockDetails: stockByEntity,
+            movements: lastMovements
+        });
+    } catch (error) {
+        console.error('Error en lookup de producto:', error);
+        res.status(500).json({ error: 'Error al buscar el producto.' });
+    }
+});
