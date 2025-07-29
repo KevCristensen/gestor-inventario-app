@@ -31,7 +31,14 @@ router.post('/login', async (req, res) => {
             return res.status(403).json({ message: 'La cuenta se encuentra inactiva. Contacte al administrador.' });
         }
 
-        const tokenPayload = { id: user.id, email: user.email, role: user.role, entity_id: user.entity_id };
+        const tokenPayload = { 
+            id: user.id, 
+            email: user.email, 
+            name: user.name, // <-- Añade esta línea
+            role: user.role, 
+            entity_id: user.entity_id 
+          };
+          
         const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '8h' });
 
         res.json({

@@ -1,13 +1,15 @@
 import { Component, OnInit, ChangeDetectorRef, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
+import { Subscription, finalize } from 'rxjs';
 import { ProvidersService } from '../../services/providers.service';
 import { ProductsService } from '../../services/products.service';
 import { ReceptionsService } from '../../services/receptions.service';
 import { AuthService } from '../../services/auth.service'; 
 import { NotificationService } from '../../services/notification.service'; 
 import { EntitiesService } from '../../services/entities.service'; 
+import { ConnectionService } from '../../services/connection.service'; 
+
 @Component({
   selector: 'app-inventory-reception',
   standalone: true,
@@ -27,6 +29,9 @@ export class InventoryReceptionComponent implements OnInit, AfterViewInit {
     entity_id: null, 
   };
   entityName: string = '';
+  isSaving = false; 
+
+  private reconnectedSubscription: Subscription; 
 
   constructor(
     private providersService: ProvidersService,
@@ -36,25 +41,41 @@ export class InventoryReceptionComponent implements OnInit, AfterViewInit {
     private authService: AuthService,
     private notificationService: NotificationService,
     private entitiesService: EntitiesService,
-  ) {}
+    private connectionService: ConnectionService
+  ) {
+    this.reconnectedSubscription = this.connectionService.reconnected$.subscribe(() => {
+      console.log('Reconexión detectada, recargando datos de Recepción...');
+      this.loadInitialData();
+    });
+  }
 
   ngOnInit(): void {
+    // ngOnInit ahora solo llama a la función principal de carga.
+    this.loadInitialData();
+  }
+
+  loadInitialData(): void {
     this.providersService.getAllProviders().subscribe(data => {
       this.providerList = data;
       this.cdr.detectChanges(); 
-      const currentUser = this.authService.getCurrentUser();
-      if (currentUser?.entity_id) {
-        this.entitiesService.getEntityById(currentUser.entity_id).subscribe(entity => {
-          this.entityName = entity.name;
-        });
-      }
     });
+
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser?.entity_id) {
+      this.entitiesService.getEntityById(currentUser.entity_id).subscribe(entity => {
+        this.entityName = entity.name;
+      });
+    }
   }
 
   ngAfterViewInit(): void {
     this.barcodeInput.nativeElement.focus();
   }
 
+  ngOnDestroy(): void {
+    this.reconnectedSubscription.unsubscribe();
+  }
+  
   onBarcodeScanned(barcode: string): void {
     if (!barcode) return;
 
@@ -92,8 +113,11 @@ export class InventoryReceptionComponent implements OnInit, AfterViewInit {
     // Asigna el user_id y el entity_id del usuario logueado
     this.reception.user_id = currentUser.id;
     this.reception.entity_id = currentUser.entity_id;
+    this.isSaving = true;
 
-    this.receptionsService.createReception(this.reception).subscribe({
+    this.receptionsService.createReception(this.reception).pipe(
+      finalize(() => this.isSaving = false) // <-- Desbloquea al finalizar
+    ).subscribe({
       next: () => {
         this.notificationService.showSuccess('Recepción guardada exitosamente.');
         this.resetForm();

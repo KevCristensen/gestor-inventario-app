@@ -1,6 +1,8 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardService } from '../../services/dashboard.service';
+import { ConnectionService } from '../../services/connection.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -8,29 +10,43 @@ import { DashboardService } from '../../services/dashboard.service';
   imports: [CommonModule],
   templateUrl: './dashboard.component.html',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   groupedLowStockItems: { [key: string]: any[] } = {};
   sortConfig = { key: 'current_stock', direction: 'asc' };
-  summary: any = { products: 0, providers: 0 }; // <-- 1. Propiedad para el resumen
+  summary: any = { products: 0, providers: 0 };
+  private reconnectedSubscription: Subscription;
 
   constructor(
     private dashboardService: DashboardService,
+    private connectionService: ConnectionService,
     private cdr: ChangeDetectorRef
-  ) {}
-
-  ngOnInit(): void {
-    this.loadAlerts();
-
-    // 2. Añade la llamada para cargar el resumen
-    this.dashboardService.getSummary().subscribe(data => {
-      this.summary = data;
-      this.cdr.detectChanges();
+  ) {
+    this.reconnectedSubscription = this.connectionService.reconnected$.subscribe(() => {
+      console.log('Reconexión detectada, recargando datos del dashboard...');
+      this.loadData(); // Llama a la función unificada
     });
   }
 
-  loadAlerts(): void {
+  ngOnInit(): void {
+    this.loadData(); // Llama a la función unificada
+  }
+
+  ngOnDestroy(): void {
+    this.reconnectedSubscription.unsubscribe();
+  }
+
+  // ESTA ES AHORA LA ÚNICA FUNCIÓN QUE CARGA TODOS LOS DATOS
+  loadData(): void {
+    // Carga las alertas de stock bajo (con ordenamiento)
     this.dashboardService.getLowStockAlerts(this.sortConfig.key, this.sortConfig.direction).subscribe(data => {
+      // Agrupa los datos aquí
       this.groupedLowStockItems = this.groupItemsByEntity(data);
+      this.cdr.detectChanges();
+    });
+
+    // Carga el resumen
+    this.dashboardService.getSummary().subscribe(data => {
+      this.summary = data;
       this.cdr.detectChanges();
     });
   }
@@ -53,7 +69,7 @@ export class DashboardComponent implements OnInit {
       this.sortConfig.key = key;
       this.sortConfig.direction = 'asc';
     }
-    this.loadAlerts();
+    this.loadData(); // Llama a la función unificada
   }
 
   getObjectKeys(obj: any) {

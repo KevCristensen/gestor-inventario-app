@@ -6,6 +6,7 @@ import { AssetsService } from '../../services/assets.service';
 import { EntitiesService } from '../../services/entities.service';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-asset-movements',
@@ -19,6 +20,7 @@ export class AssetMovementsComponent implements OnInit {
   availableAssets: any[] = []; // Lista de activos CON STOCK en la bodega origen
   entities: any[] = [];
   currentUserEntityId: number | null = null;
+  isSaving = false;
   
   movementData: {
     type: string,
@@ -131,8 +133,11 @@ export class AssetMovementsComponent implements OnInit {
     if (payload.type === 'retorno_evento') payload.from_entity_id = null;
     if (payload.type === 'baja') payload.to_entity_id = null;
     if (payload.type === 'entrada_inicial') payload.from_entity_id = null;
+    this.isSaving = true;
     
-    this.assetMovementsService.createMovement(payload).subscribe({
+    this.assetMovementsService.createMovement(payload).pipe(
+      finalize(() => this.isSaving = false) // <-- Desbloquea al finalizar
+    ).subscribe({
       next: () => {
         this.notificationService.showSuccess('Movimiento registrado exitosamente.');
         this.loadInitialData();

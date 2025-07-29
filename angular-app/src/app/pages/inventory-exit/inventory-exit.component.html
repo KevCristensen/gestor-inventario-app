@@ -43,16 +43,21 @@
       <div class="flex justify-end mt-6 space-x-4">
         <button 
           (click)="printReceipt()" 
-          [disabled]="exitData.items.length === 0"
-          class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500">
+          [disabled]="exitData.items.length === 0 || isSaving"
+          class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50">
           Imprimir
         </button>
       
         <button 
           (click)="saveExit()" 
-          [disabled]="exitData.items.length === 0" 
-          class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500">
-          Confirmar Salida
+          [disabled]="exitData.items.length === 0 || isSaving" 
+          class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center min-w-[210px]">
+          @if (isSaving) {
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" ...> <!-- Mismo SVG que antes --> </svg>
+            <span>Confirmando...</span>
+          } @else {
+            <span>Confirmar Salida</span>
+          }
         </button>
       </div>
     </div>

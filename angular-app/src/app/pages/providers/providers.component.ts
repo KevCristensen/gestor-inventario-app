@@ -18,7 +18,6 @@ export class ProvidersComponent implements OnInit {
   currentPage: number = 1;
   itemsPerPage: number = 15;
   totalItems: number = 0;
-
   constructor(
     private providersService: ProvidersService,
     private cdr: ChangeDetectorRef

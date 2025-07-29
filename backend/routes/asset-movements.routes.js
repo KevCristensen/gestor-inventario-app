@@ -26,7 +26,7 @@ router.post('/', async (req, res) => {
             );
 
            // Lógica de inventario actualizada
-           if (type === 'salida_evento' || type === 'baja' || type === 'traslado_salida') {
+           if (type === 'salida_evento' || type === 'baja_perdida' || type === 'baja_dano' || type === 'traslado_salida') {
                 // Estos tipos RESTAN del inventario de origen
                 await connection.query(
                     'UPDATE asset_inventory SET quantity = quantity - ? WHERE asset_id = ? AND entity_id = ?',

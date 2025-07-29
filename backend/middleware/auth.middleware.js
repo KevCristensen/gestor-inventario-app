@@ -16,6 +16,9 @@ function isAdmin(req, res, next) {
         }
         
         // 3. Verificar si el rol es 'admin'
+
+        // --- AÑADE ESTA LÍNEA PARA DEPURAR ---
+        console.log('Token decodificado - Rol del usuario:', user.role);
         if (user.role !== 'admin') {
             return res.status(403).json({ error: 'Acceso denegado. Se requiere rol de administrador.' });
         }

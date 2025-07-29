@@ -6,6 +6,7 @@ import { InventoryService } from '../../services/inventory.service';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { EntitiesService } from '../../services/entities.service';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-inventory-exit',
@@ -23,6 +24,7 @@ export class InventoryExitComponent implements OnInit, AfterViewInit {
     items: [] as any[],
   };
   entityName: string = '';
+  isSaving = false; 
 
   constructor(
     private productsService: ProductsService,
@@ -81,11 +83,14 @@ export class InventoryExitComponent implements OnInit, AfterViewInit {
       this.notificationService.showError('Debe añadir al menos un producto.');
       return;
     }
-    this.inventoryService.createExit(this.exitData).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Salida registrada exitosamente.');
-        this.resetForm();
-      },
+    this.isSaving = true; 
+    this.inventoryService.createExit(this.exitData).pipe(
+      finalize(() => this.isSaving = false) // <-- Desbloquea al finalizar
+      ).subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Salida registrada exitosamente.');
+          this.resetForm();
+        },
       error: (err) => {
         // El mensaje específico del backend viene en err.error.error
         const errorMessage = err.error?.error || 'Ocurrió un error inesperado.';

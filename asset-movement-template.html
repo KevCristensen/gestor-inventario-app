@@ -38,7 +38,9 @@
                         retorno_evento: 'Comprobante de Retorno de Evento',
                         traslado_salida: 'Guía de Despacho / Traslado',
                         entrada_traslado: 'Comprobante de Recepción / Traslado',
-                        baja: 'Comprobante de Baja de Activos'
+                        baja: 'Comprobante de Baja de Activos', // Este es un fallback
+                        baja_perdida: 'Comprobante de Baja por Pérdida',
+                        baja_dano: 'Comprobante de Baja por Daño'
                     };
     
                     // --- LÓGICA DE DETALLES CORREGIDA ---
@@ -47,7 +49,7 @@
                         <div><strong>Usuario:</strong> ${data.user.email}</div>
                     `;
                     // Muestra Origen si es una salida o baja
-                    if (data.type === 'salida_traslado' || data.type === 'salida_evento' || data.type === 'baja') {
+                    if (data.type === 'salida_traslado' || data.type === 'salida_evento' || data.type === 'baja' || data.type === 'baja_perdida' || data.type === 'baja_dano') {
                         detailsHtml += `<div><strong>Bodega Origen:</strong> ${data.from_entity_name}</div>`;
                     }
                     // Muestra Destino si es una entrada o un traslado
