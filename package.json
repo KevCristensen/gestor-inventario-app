@@ -40,15 +40,12 @@
       "output": "release"
     },
     "files": [
-      "main.js",
-      "preload.js",
       ".env",
       "backend/**/*",
       "dist/**/*",
       "release-notes.json",
       "receipt-template.html",
       "electron/**/*",
-      "node_modules/**/*",
       "analysis-template.html",
       "asset-movement-template.html",
       "loss-damage-template.html"
