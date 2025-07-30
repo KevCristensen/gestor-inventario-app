@@ -15,6 +15,7 @@ import { AssetMovementsComponent } from './pages/asset-movements/asset-movements
 import { AssetInventoryComponent } from './pages/asset-inventory/asset-inventory.component';
 import { ProductLookupComponent } from './pages/product-lookup/product-lookup.component';
 import { LossDamageReportComponent } from './pages/loss-damage-report/loss-damage-report.component';
+import { ChatComponent } from './pages/chat/chat.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -32,6 +33,7 @@ export const routes: Routes = [
             { path: 'global-inventory', component: GlobalInventoryComponent },
             { path: 'analysis', component: ConsumptionAnalysisComponent },
             { path: 'loss-damage-report', component: LossDamageReportComponent },
+            { path: 'chat', component: ChatComponent }, 
             { path: 'assets', component: AssetsComponent },
             { path: 'asset-movements', component: AssetMovementsComponent },
             { path: 'asset-inventory', component: AssetInventoryComponent }, 

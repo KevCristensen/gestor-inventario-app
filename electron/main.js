@@ -3,6 +3,10 @@ const path = require('path');
 const url = require('url');
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
+const http = require('http'); 
+const { Server } = require("socket.io"); 
+const chatRoutes = require('../backend/routes/chat.routes'); // <-- 1. IMPORTA
+
 
 // --- Single Instance Lock ---
 if (!app.requestSingleInstanceLock()) {
@@ -73,6 +77,13 @@ function createWindow() {
 
 async function startServer() {
     const backendApp = express();
+    const httpServer = http.createServer(backendApp); // 3. Crea un servidor http desde express
+    const io = new Server(httpServer, { // 4. Inicializa socket.io
+        cors: {
+            origin: "http://localhost:4200", // Permite la conexión desde el frontend de Angular en desarrollo
+            methods: ["GET", "POST"]
+        }
+    });
     backendApp.use(cors());
     backendApp.use(express.json());
     
@@ -87,11 +98,41 @@ async function startServer() {
     backendApp.use('/api/analysis', analysisRoutes);
     backendApp.use('/api/assets', isAdmin, assetsRoutes);
     backendApp.use('/api/asset-movements', assetMovementsRoutes); 
+    backendApp.use('/api/chat', chatRoutes); 
+
+    // --- LÓGICA DEL CHAT SIMPLIFICADA ---
+    const onlineUsers = new Map();
+
+    io.on('connection', (socket) => {
+        socket.on('join', (user) => {
+            log.info(`Usuario ${user.name} (${socket.id}) se unió.`);
+            onlineUsers.set(user.id.toString(), { socketId: socket.id });
+        });
+
+        // Este evento ahora es solo una notificación
+        socket.on('sendMessage', (data) => {
+            const recipient = onlineUsers.get(data.to_user_id.toString());
+            if (recipient) {
+                io.to(recipient.socketId).emit('newMessage', data);
+            }
+        });
+
+        socket.on('disconnect', () => {
+            for (let [userId, userData] of onlineUsers.entries()) {
+                if (userData.socketId === socket.id) {
+                    onlineUsers.delete(userId);
+                    log.info(`Usuario con ID ${userId} se desconectó.`);
+                    break;
+                }
+            }
+        });
+    });
+
 
     const PORT = 3000;
-    backendApp.listen(PORT, () => {
-        console.log(`Servidor Express corriendo en http://localhost:${PORT}`);
-        log.info(`Servidor Express corriendo en http://localhost:${PORT}`);
+    httpServer.listen(PORT, () => {
+        console.log(`Servidor Express y Socket.IO corriendo en http://localhost:${PORT}`);
+        log.info(`Servidor Express y Socket.IO corriendo en http://localhost:${PORT}`);
     });
 }
 

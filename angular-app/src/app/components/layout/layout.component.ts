@@ -5,6 +5,7 @@ import { EntitiesService } from '../../services/entities.service';
 import { ConnectionService } from '../../services/connection.service';
 import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common'; 
+import { ChatService } from '../../services/chat.service'; 
 
 
 @Component({
@@ -18,19 +19,23 @@ export class LayoutComponent implements OnInit {
   currentUser: any = null;
   entityName: string = 'Cargando...';
   isOnline$: Observable<boolean>;
+  unreadChatMessages$: Observable<number>; // Nueva propiedad
 
   constructor(
     private authService: AuthService,
     private entitiesService: EntitiesService, 
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private connectionService: ConnectionService
+    private connectionService: ConnectionService,
+    private chatService: ChatService
   ) {
     this.isOnline$ = this.connectionService.isOnline$;
+    this.unreadChatMessages$ = this.chatService.unreadMessages$;
   }
 
   ngOnInit(): void {
     this.userRole = this.authService.getUserRole();
+    this.chatService.fetchUnreadCount(); 
     this.currentUser = this.authService.getCurrentUser(); 
     // 4. Busca el nombre del colegio
     if (this.currentUser && this.currentUser.entity_id) {

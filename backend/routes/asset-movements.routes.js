@@ -63,7 +63,7 @@ router.get('/', async (req, res) => {
             SELECT 
                 am.*, 
                 a.name as asset_name,
-                u.email as user_email,
+                u.name as user_name,
                 from_e.name as from_entity_name,
                 to_e.name as to_entity_name
             FROM asset_movements am
