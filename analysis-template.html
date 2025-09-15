@@ -87,8 +87,7 @@
     <div id="report-content"></div>
 
     <script>
-        const { ipcRenderer } = require('electron');
-        ipcRenderer.on('analysis-data', (event, data) => {
+        window.analysisAPI.onData((data) => {
             const container = document.getElementById('report-content');
             
             // Helper para formatear moneda

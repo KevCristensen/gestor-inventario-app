@@ -119,3 +119,4 @@ ipcMain.on('print-receipt', (event, receiptData) => {
         printWindow.webContents.send('receipt-data', receiptData);
     });
 });
+

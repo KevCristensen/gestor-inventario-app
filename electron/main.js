@@ -78,9 +78,11 @@ function createWindow() {
 async function startServer() {
     const backendApp = express();
     const httpServer = http.createServer(backendApp); // 3. Crea un servidor http desde express
-    const io = new Server(httpServer, { // 4. Inicializa socket.io
+    const io = new Server(httpServer, {
         cors: {
-            origin: "http://localhost:4200", // Permite la conexión desde el frontend de Angular en desarrollo
+            origin: app.isPackaged
+                ? false // En producción, el origen es `file://` y no necesita CORS explícito
+                : "http://localhost:4200", // Permite la conexión desde el frontend de Angular en desarrollo
             methods: ["GET", "POST"]
         }
     });
@@ -212,22 +214,23 @@ ipcMain.on('print-receipt', async (event, receiptData) => {
     }
 });
 
-ipcMain.on('print-analysis', (event, analysisData) => {
+ipcMain.on('print-analysis', async (event, analysisData) => {
     const printWindow = new BrowserWindow({
         width: 800,
         height: 600,
         show: true,
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload-analysis.js')
         }
     });
 
-    printWindow.loadFile(path.join(__dirname, '../analysis-template.html'));
-
-    printWindow.webContents.on('did-finish-load', () => {
+    try {
+        await printWindow.loadFile(path.join(__dirname, '../analysis-template.html'));
         printWindow.webContents.send('analysis-data', analysisData);
-    });
+    } catch (error) {
+        log.error('Fallo al cargar la ventana de impresión de análisis:', error);
+    }
 });
 
 ipcMain.on('print-asset-movement', async (event, movementData) => {
