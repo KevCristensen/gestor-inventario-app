@@ -40,6 +40,8 @@
       "output": "release"
     },
     "files": [
+      "package.json",
+      "node_modules/",
       ".env",
       "backend/**/*",
       "dist/**/*",
