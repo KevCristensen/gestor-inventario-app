@@ -1,5 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('printAPI', {
+contextBridge.exposeInMainWorld('lossDamageAPI', {
   onData: (callback) => ipcRenderer.on('loss-damage-data', (event, ...args) => callback(...args))
 });

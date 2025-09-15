@@ -102,6 +102,12 @@ async function startServer() {
     backendApp.use('/api/asset-movements', assetMovementsRoutes); 
     backendApp.use('/api/chat', chatRoutes); 
 
+    // --- Global Error Handler ---
+    backendApp.use((err, req, res, next) => {
+      log.error('Error no controlado en el backend:', err); // Log the full error
+      res.status(500).json({ message: 'Error interno del servidor', error: err.message });
+    });
+
     // --- LÓGICA DEL CHAT SIMPLIFICADA ---
     const onlineUsers = new Map();
 
