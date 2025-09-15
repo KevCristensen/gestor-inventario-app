@@ -7,6 +7,11 @@ const http = require('http');
 const { Server } = require("socket.io"); 
 const chatRoutes = require('../backend/routes/chat.routes'); // <-- 1. IMPORTA
 
+// --- Capturador Global de Errores de Promesa ---
+process.on('unhandledRejection', (reason, promise) => {
+  log.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 
 // --- Single Instance Lock ---
 if (!app.requestSingleInstanceLock()) {
