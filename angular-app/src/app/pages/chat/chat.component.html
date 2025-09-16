@@ -15,7 +15,10 @@
                 <a (click)="selectUser(user)" 
                    class="w-full flex items-center p-2 rounded-lg cursor-pointer transition-colors"
                    [ngClass]="{'bg-blue-600': selectedUserId === user.id, 'hover:bg-gray-700': selectedUserId !== user.id}">
-                  {{ user.name }}
+                  <!-- El punto de estado (verde/gris) -->
+                  <span class="status-dot" [class.online]="isOnline(user.id)"></span>
+                  
+                  <span>{{ user.name }}</span>
                 </a>
               }
             </div>

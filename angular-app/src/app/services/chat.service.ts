@@ -13,22 +13,32 @@ export class ChatService {
   private url = 'http://localhost:3000';
   private apiUrl = `${this.url}/api/chat`;
   public unreadMessages$ = new BehaviorSubject<number>(0);
+  private onlineUsersSubject = new BehaviorSubject<string[]>([]);
+  public onlineUsers$ = this.onlineUsersSubject.asObservable();
+
 
   constructor(
     private http: HttpClient,
     private authService: AuthService
   ) {
     this.socket = io(this.url, { autoConnect: false });
+    this.socket.on('updateOnlineUsers', (onlineUserIds: string[]) => {
+    this.onlineUsersSubject.next(onlineUserIds);
+    });
+
+    // En tu servicio, cuando el socket se conecta
+    this.socket.on('connect', () => {
+      const currentUser = this.authService.getCurrentUser(); // O como obtengas el usuario
+      if (currentUser) {
+        this.socket.emit('join', currentUser);
+      }
+    });
   }
 
   // --- Conexión de Socket.IO ---
   connect(): void {
     if (!this.socket.connected) {
       this.socket.connect();
-      const user = this.authService.getCurrentUser();
-      if (user) {
-        this.socket.emit('join', user);
-      }
     }
   }
 
@@ -82,4 +92,5 @@ export class ChatService {
       this.socket.on('newMessage', (message) => observer.next(message));
     });
   }
+
 }

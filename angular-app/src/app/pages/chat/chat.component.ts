@@ -20,6 +20,8 @@ export class ChatComponent implements OnInit, OnDestroy {
   currentUser: any;
   @ViewChild('messageContainer') private messageContainer!: ElementRef;
 
+  onlineUserIds: Set<string> = new Set();
+
   private notificationSound = new Audio('assets/audio/notification.mp3');
   
   selectedUserId: number | null = null;
@@ -40,6 +42,11 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.chatService.connect();
     
     this.loadUsersAndGroupThem();
+
+    this.subscriptions.add(this.chatService.onlineUsers$.subscribe(ids => {
+      this.onlineUserIds = new Set(ids);
+      this.cdr.detectChanges(); // Forzar la detección de cambios
+    }));
 
     this.subscriptions.add(this.chatService.onNewMessage().subscribe((message: any) => {
       const otherUserId = message.from_user_id === this.currentUser.id ? message.to_user_id : message.from_user_id;
@@ -136,6 +143,10 @@ export class ChatComponent implements OnInit, OnDestroy {
     return Object.keys(obj);
   }
 
+  isOnline(userId: number): boolean {
+    return this.onlineUserIds.has(userId.toString());
+  }
+
   scrollToBottom(): void {
     // Usamos un pequeño timeout para asegurar que el DOM se haya actualizado
     setTimeout(() => {
@@ -148,4 +159,3 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
 }
-

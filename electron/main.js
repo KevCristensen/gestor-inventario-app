@@ -53,6 +53,8 @@ const chatRoutes = require('../backend/routes/chat.routes');
 
 let mainWindow;
 
+const PORT = 3000; 
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1200,
@@ -65,7 +67,6 @@ function createWindow() {
         }
     });
 
-    const PORT = 3000;
     const startURL = app.isPackaged
         ? `http://localhost:${PORT}` // En producción, apunta a nuestro propio servidor
         : 'http://localhost:4200';
@@ -86,8 +87,8 @@ async function startServer() {
     const httpServer = http.createServer(backendApp); // 3. Crea un servidor http desde express
     const io = new Server(httpServer, {
         cors: {
-            origin: app.isPackaged
-                ? false // En producción, el origen es `file://` y no necesita CORS explícito
+            origin: app.isPackaged 
+                ? false // En producción, el cliente y el servidor son del mismo origen (localhost:3000), por lo que no se necesita CORS.
                 : "http://localhost:4200", // Permite la conexión desde el frontend de Angular en desarrollo
             methods: ["GET", "POST"]
         }
@@ -128,36 +129,45 @@ async function startServer() {
     }
 
     // --- LÓGICA DEL CHAT SIMPLIFICADA ---
-    const onlineUsers = new Map();
+    const onlineUsers = new Map(); // Almacena userId -> { socketId, user }
 
     io.on('connection', (socket) => {
+        log.info(`Nuevo cliente conectado al chat: ${socket.id}`);
+
+        // Evento para que un usuario se "registre" como online
         socket.on('join', (user) => {
-            log.info(`Usuario ${user.name} (${socket.id}) se unió.`);
-            onlineUsers.set(user.id.toString(), { socketId: socket.id });
+            log.info(`Usuario ${user.name} (ID: ${user.id}) se unió al chat con socket ${socket.id}.`);
+            onlineUsers.set(user.id.toString(), { socketId: socket.id, user: user });
+            
+            // Notificar a TODOS los clientes la nueva lista de usuarios en línea (solo los IDs)
+            io.emit('updateOnlineUsers', Array.from(onlineUsers.keys()));
         });
 
-        // Este evento ahora es solo una notificación
+        // Evento para enviar un mensaje en tiempo real
         socket.on('sendMessage', (data) => {
             const recipient = onlineUsers.get(data.to_user_id.toString());
             if (recipient) {
+                // Emitir solo al destinatario para no molestar a los demás
                 io.to(recipient.socketId).emit('newMessage', data);
             }
         });
 
+        // Evento de desconexión
         socket.on('disconnect', () => {
+            log.info(`Cliente desconectado del chat: ${socket.id}`);
+            // Encontrar qué usuario se desconectó y eliminarlo
             for (let [userId, userData] of onlineUsers.entries()) {
                 if (userData.socketId === socket.id) {
                     onlineUsers.delete(userId);
                     log.info(`Usuario con ID ${userId} se desconectó.`);
+                    // Notificar a todos que la lista de usuarios en línea ha cambiado
+                    io.emit('updateOnlineUsers', Array.from(onlineUsers.keys()));
                     break;
                 }
             }
         });
     });
-
-
-    const PORT = 3000;
-    httpServer.listen(PORT, () => {
+    const serverInstance = httpServer.listen(PORT, () => {
         log.info(`Servidor Express y Socket.IO corriendo en http://localhost:${PORT}`);
     });
 }
@@ -234,7 +244,6 @@ ipcMain.on('print-receipt', async (event, receiptData) => {
         await printWindow.loadFile(path.join(__dirname, '../receipt-template.html'));
         printWindow.webContents.send('receipt-data', receiptData);
     } catch (error) {
-        console.error('Fallo al cargar la ventana de impresión de recibo:', error);
         log.error('Fallo al cargar la ventana de impresión de recibo:', error);
     }
 });
@@ -273,7 +282,6 @@ ipcMain.on('print-asset-movement', async (event, movementData) => {
         await printWindow.loadFile(path.join(__dirname, '../asset-movement-template.html'));
         printWindow.webContents.send('asset-movement-data', movementData);
     } catch (error) {
-        console.error('Fallo al cargar la ventana de impresión de activos:', error);
         log.error('Fallo al cargar la ventana de impresión de activos:', error);
     }
 });
@@ -293,7 +301,6 @@ ipcMain.on('print-loss-damage-report', async (event, reportData) => {
         await printWindow.loadFile(path.join(__dirname, '../loss-damage-template.html'));
         printWindow.webContents.send('loss-damage-data', reportData); // Usa el canal correcto
     } catch (error) {
-        console.error('Fallo al cargar la ventana de impresión:', error);
         log.error('Fallo al cargar la ventana de impresión:', error);
     }
 });

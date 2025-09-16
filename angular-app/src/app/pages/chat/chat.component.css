@@ -1,0 +1,24 @@
+/* En tu archivo de estilos para el chat */
+
+.status-dot {
+  height: 10px;
+  width: 10px;
+  background-color: #9ca3af; /* Gris por defecto (offline) */
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 10px;
+  flex-shrink: 0; /* Evita que el punto se encoja */
+  transition: background-color 0.3s ease;
+}
+
+.status-dot.online {
+  background-color: #28a745; /* Verde para online */
+}
+
+/* Estilo para el cursor en el <summary> del acordeón */
+summary {
+  list-style: none; /* Oculta el triángulo por defecto si no te gusta */
+}
+summary::-webkit-details-marker {
+  display: none; /* Oculta el triángulo en Chrome/Safari */
+}
