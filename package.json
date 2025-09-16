@@ -42,7 +42,6 @@
     "files": [
       "package.json",
       "node_modules/",
-      ".env",
       "backend/**/*",
       "dist/**/*",
       "release-notes.json",
@@ -51,6 +50,9 @@
       "analysis-template.html",
       "asset-movement-template.html",
       "loss-damage-template.html"
+    ],
+    "extraResources": [
+      ".env"
     ],
     "win": {
       "target": "nsis"
