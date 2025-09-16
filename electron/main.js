@@ -35,6 +35,7 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 // --- LOG DE DEBUG PARA VARIABLES DE ENTORNO ---
 log.info('--- Variables de Entorno Cargadas ---');
+log.info(`Cargando .env desde: ${dotenvPath}`);
 log.info(`DB_HOST: ${process.env.DB_HOST}`);
 log.info(`DB_USER: ${process.env.DB_USER}`);
 log.info(`DB_PASSWORD: ${process.env.DB_PASSWORD ? '******' : 'NO CARGADA'}`);
