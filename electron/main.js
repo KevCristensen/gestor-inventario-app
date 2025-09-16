@@ -90,6 +90,22 @@ function createWindow() {
 
 async function startServer() {
     const backendApp = express();
+    const dbPool = require('../backend/db'); // Importamos el pool de DB
+
+    // --- NUEVA PRUEBA DE DIAGNÓSTICO DE CONEXIÓN ---
+    try {
+        log.info('Realizando prueba de conexión directa a la base de datos al iniciar...');
+        const connection = await dbPool.getConnection();
+        log.info('Prueba de conexión a la base de datos EXITOSA. Obteniendo versión...');
+        const [rows] = await connection.query('SELECT VERSION()');
+        log.info(`Versión de la base de datos: ${rows[0]['VERSION()']}`);
+        connection.release();
+        log.info('Conexión de prueba liberada.');
+    } catch (error) {
+        log.error('!!! FALLO LA PRUEBA DE CONEXIÓN DIRECTA A LA BASE DE DATOS !!!');
+        log.error('Error detallado en prueba de conexión:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    }
+    // --- FIN DE LA PRUEBA ---
     const httpServer = http.createServer(backendApp); // 3. Crea un servidor http desde express
     const io = new Server(httpServer, {
         cors: {
