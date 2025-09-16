@@ -1,6 +1,6 @@
 {
   "name": "gestor-inventario",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "Gestor de Inventario de Alimentos",
   "main": "electron/main.js",
   "author": "Kevin Cristensen (KC Smart Systems)",
