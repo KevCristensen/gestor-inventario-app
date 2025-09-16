@@ -49,8 +49,8 @@ router.post('/login', async (req, res) => {
         });
 
     } catch (error) {
-        log.error('!!! ERROR CRÍTICO DURANTE EL LOGIN (PROBABLEMENTE DB) !!!:', error);
-        res.status(500).json({ message: 'Error interno del servidor.', details: error.message });
+        log.error('!!! ERROR CRÍTICO DURANTE EL LOGIN (PROBABLEMENTE DB) !!!:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        res.status(500).json({ message: 'Error interno del servidor.', details: error.code || error.message });
     }
 });
 
