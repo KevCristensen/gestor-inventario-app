@@ -72,12 +72,9 @@ function createWindow() {
         }
     });
 
+    const PORT = 3000;
     const startURL = app.isPackaged
-        ? url.format({
-            pathname: path.join(__dirname, '../dist/browser/index.html'),
-            protocol: 'file:',
-            slashes: true
-          })
+        ? `http://localhost:${PORT}` // En producción, apunta a nuestro propio servidor
         : 'http://localhost:4200';
 
     mainWindow.loadURL(startURL);
@@ -105,6 +102,12 @@ async function startServer() {
     backendApp.use(cors());
     backendApp.use(express.json());
     
+    // --- SIRVE LOS ARCHIVOS DE ANGULAR EN PRODUCCIÓN ---
+    if (app.isPackaged) {
+        // Sirve los archivos estáticos (js, css, etc.) desde la carpeta dist/browser
+        backendApp.use(express.static(path.join(__dirname, '../dist/browser')));
+    }
+
     backendApp.use('/api/providers', providersRoutes);
     backendApp.use('/api/products', productsRoutes);
     backendApp.use('/api/auth', authRoutes);
@@ -123,6 +126,13 @@ async function startServer() {
       log.error('Error no controlado en el backend:', err); // Log the full error
       res.status(500).json({ message: 'Error interno del servidor', error: err.message });
     });
+
+    // --- RUTA FALLBACK PARA ANGULAR ROUTING ---
+    if (app.isPackaged) {
+        backendApp.get('*', (req, res) => {
+            res.sendFile(path.join(__dirname, '../dist/browser/index.html'));
+        });
+    }
 
     // --- LÓGICA DEL CHAT SIMPLIFICADA ---
     const onlineUsers = new Map();
@@ -233,6 +243,7 @@ ipcMain.on('print-receipt', async (event, receiptData) => {
         printWindow.webContents.send('receipt-data', receiptData);
     } catch (error) {
         console.error('Fallo al cargar la ventana de impresión de recibo:', error);
+        log.error('Fallo al cargar la ventana de impresión de recibo:', error);
     }
 });
 
@@ -271,6 +282,7 @@ ipcMain.on('print-asset-movement', async (event, movementData) => {
         printWindow.webContents.send('asset-movement-data', movementData);
     } catch (error) {
         console.error('Fallo al cargar la ventana de impresión de activos:', error);
+        log.error('Fallo al cargar la ventana de impresión de activos:', error);
     }
 });
 
@@ -290,5 +302,6 @@ ipcMain.on('print-loss-damage-report', async (event, reportData) => {
         printWindow.webContents.send('loss-damage-data', reportData); // Usa el canal correcto
     } catch (error) {
         console.error('Fallo al cargar la ventana de impresión:', error);
+        log.error('Fallo al cargar la ventana de impresión:', error);
     }
 });
