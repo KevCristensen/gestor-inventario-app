@@ -3,9 +3,14 @@ const path = require('path');
 const url = require('url');
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
-const http = require('http'); 
+const http = require('http');
 const { Server } = require("socket.io"); 
-const chatRoutes = require('../backend/routes/chat.routes'); // <-- 1. IMPORTA
+
+// --- 1. CONFIGURACIÓN DE VARIABLES DE ENTORNO (DEBE SER LO PRIMERO) ---
+const dotenvPath = app.isPackaged
+  ? path.join(process.resourcesPath, '.env')
+  : path.join(__dirname, '../.env');
+require('dotenv').config({ path: dotenvPath });
 
 // --- Capturador Global de Errores de Promesa ---
 process.on('unhandledRejection', (reason, promise) => {
@@ -30,20 +35,7 @@ autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
 log.info('Iniciando aplicación...');
 
-// --- Dependencias y Rutas del Backend ---
-const dotenvPath = app.isPackaged
-  ? path.join(process.resourcesPath, '.env')
-  : path.join(__dirname, '../.env');
-require('dotenv').config({ path: dotenvPath });
 const express = require('express');
-// --- LOG DE DEBUG PARA VARIABLES DE ENTORNO ---
-log.info('--- Variables de Entorno Cargadas ---');
-log.info(`Cargando .env desde: ${dotenvPath}`);
-log.info(`DB_HOST: ${process.env.DB_HOST}`);
-log.info(`DB_USER: ${process.env.DB_USER}`);
-log.info(`DB_PASSWORD: ${process.env.DB_PASSWORD ? '******' : 'NO CARGADA'}`);
-log.info(`DB_DATABASE: ${process.env.DB_DATABASE}`);
-log.info('------------------------------------');
 const cors = require('cors');
 const { isAdmin } = require('../backend/middleware/auth.middleware');
 const providersRoutes = require('../backend/routes/providers.routes'); 
@@ -57,6 +49,7 @@ const entitiesRoutes = require('../backend/routes/entities.routes');
 const analysisRoutes = require('../backend/routes/analysis.routes');
 const assetsRoutes = require('../backend/routes/assets.routes');
 const assetMovementsRoutes = require('../backend/routes/asset-movements.routes'); 
+const chatRoutes = require('../backend/routes/chat.routes');
 
 let mainWindow;
 
@@ -90,22 +83,6 @@ function createWindow() {
 
 async function startServer() {
     const backendApp = express();
-    const dbPool = require('../backend/db'); // Importamos el pool de DB
-
-    // --- NUEVA PRUEBA DE DIAGNÓSTICO DE CONEXIÓN ---
-    try {
-        log.info('Realizando prueba de conexión directa a la base de datos al iniciar...');
-        const connection = await dbPool.getConnection();
-        log.info('Prueba de conexión a la base de datos EXITOSA. Obteniendo versión...');
-        const [rows] = await connection.query('SELECT VERSION()');
-        log.info(`Versión de la base de datos: ${rows[0]['VERSION()']}`);
-        connection.release();
-        log.info('Conexión de prueba liberada.');
-    } catch (error) {
-        log.error('!!! FALLO LA PRUEBA DE CONEXIÓN DIRECTA A LA BASE DE DATOS !!!');
-        log.error('Error detallado en prueba de conexión:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    }
-    // --- FIN DE LA PRUEBA ---
     const httpServer = http.createServer(backendApp); // 3. Crea un servidor http desde express
     const io = new Server(httpServer, {
         cors: {
