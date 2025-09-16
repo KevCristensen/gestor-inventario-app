@@ -65,7 +65,7 @@ function createWindow() {
         width: 1200,
         height: 800,
         webPreferences: {
-            webSecurity: false,
+            webSecurity: true, // Más seguro ahora que servimos desde http
             nodeIntegration: false,
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
@@ -129,7 +129,7 @@ async function startServer() {
 
     // --- RUTA FALLBACK PARA ANGULAR ROUTING ---
     if (app.isPackaged) {
-        backendApp.get('/*', (req, res) => {
+        backendApp.get(/.*/, (req, res) => {
             res.sendFile(path.join(__dirname, '../dist/browser/index.html'));
         });
     }
@@ -165,7 +165,6 @@ async function startServer() {
 
     const PORT = 3000;
     httpServer.listen(PORT, () => {
-        console.log(`Servidor Express y Socket.IO corriendo en http://localhost:${PORT}`);
         log.info(`Servidor Express y Socket.IO corriendo en http://localhost:${PORT}`);
     });
 }
