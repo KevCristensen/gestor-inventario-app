@@ -129,7 +129,7 @@ async function startServer() {
 
     // --- RUTA FALLBACK PARA ANGULAR ROUTING ---
     if (app.isPackaged) {
-        backendApp.get('*', (req, res) => {
+        backendApp.get('/*', (req, res) => {
             res.sendFile(path.join(__dirname, '../dist/browser/index.html'));
         });
     }
