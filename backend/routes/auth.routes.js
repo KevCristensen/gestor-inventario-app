@@ -3,6 +3,7 @@ const router = express.Router();
 const dbPool = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const log = require('electron-log');
 
 // Endpoint para autenticar un usuario
 // Ruta: POST /api/auth/login
@@ -48,8 +49,8 @@ router.post('/login', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en el login:', error);
-        res.status(500).json({ error: 'Error interno del servidor.' });
+        log.error('!!! ERROR CRÍTICO DURANTE EL LOGIN (PROBABLEMENTE DB) !!!:', error);
+        res.status(500).json({ message: 'Error interno del servidor.', details: error.message });
     }
 });
 
