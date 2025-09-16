@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const dbPool = require('../db'); // Importamos la conexión a la DB
+const log = require('electron-log');
 
 // CREAR un nuevo proveedor
 router.post('/', async (req, res) => {
@@ -15,6 +16,7 @@ router.post('/', async (req, res) => {
         );
         res.status(201).json({ id: result.insertId, ...req.body });
     } catch (error) {
+        log.error('Error al crear proveedor:', error);
         res.status(500).json({ error: 'Error al crear el proveedor.', details: error.message });
     }
 });
@@ -40,6 +42,7 @@ router.get('/', async (req, res) => {
             total: total
         });
     } catch (error) {
+        log.error('Error al obtener proveedores paginados:', error);
         res.status(500).json({ error: 'Error al obtener los proveedores.' });
     }
 });
@@ -50,6 +53,7 @@ router.get('/all/list', async (req, res) => {
         const [providers] = await dbPool.query('SELECT id, name FROM providers WHERE is_active = TRUE ORDER BY name ASC');
         res.json(providers);
     } catch (error) {
+        log.error('Error al obtener la lista completa de proveedores:', error);
         res.status(500).json({ error: 'Error al obtener la lista de proveedores.' });
     }
 });
@@ -64,6 +68,7 @@ router.get('/:id', async (req, res) => {
         }
         res.json(provider[0]);
     } catch (error) {
+        log.error(`Error al obtener proveedor con ID ${req.params.id}:`, error);
         res.status(500).json({ error: 'Error al obtener el proveedor.' });
     }
 });
@@ -79,6 +84,7 @@ router.put('/:id', async (req, res) => {
         );
         res.json({ message: 'Proveedor actualizado exitosamente.' });
     } catch (error) {
+        log.error(`Error al actualizar proveedor con ID ${req.params.id}:`, error);
         res.status(500).json({ error: 'Error al actualizar el proveedor.', details: error.message });
     }
 });
@@ -90,6 +96,7 @@ router.delete('/:id', async (req, res) => {
         await dbPool.query('DELETE FROM providers WHERE id = ?', [id]);
         res.sendStatus(204); // 204 significa "No Content", la operación fue exitosa
     } catch (error) {
+        log.error(`Error al eliminar proveedor con ID ${req.params.id}:`, error);
         res.status(500).json({ error: 'Error al eliminar el proveedor.' });
     }
 });
