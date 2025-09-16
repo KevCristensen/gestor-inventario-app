@@ -31,7 +31,10 @@ autoUpdater.logger.transports.file.level = 'info';
 log.info('Iniciando aplicación...');
 
 // --- Dependencias y Rutas del Backend ---
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const dotenvPath = app.isPackaged
+  ? path.join(process.resourcesPath, '.env')
+  : path.join(__dirname, '../.env');
+require('dotenv').config({ path: dotenvPath });
 const express = require('express');
 // --- LOG DE DEBUG PARA VARIABLES DE ENTORNO ---
 log.info('--- Variables de Entorno Cargadas ---');
