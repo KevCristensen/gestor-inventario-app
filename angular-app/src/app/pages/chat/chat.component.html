@@ -35,7 +35,7 @@
         </header>
   
         <div class="flex-grow overflow-y-auto mb-4" #messageContainer>
-          @for(msg of currentMessages; track msg.id) {
+          @for(msg of currentMessages; track (msg.id || msg.created_at)) {
             <div class="mb-4" [ngClass]="{'text-right': msg.from_user_id === currentUser.id}">
               <div class="inline-block p-3 rounded-lg max-w-lg text-left" 
                   [ngClass]="{'bg-blue-600': msg.from_user_id === currentUser.id, 'bg-gray-700': msg.from_user_id !== currentUser.id}">

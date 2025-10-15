@@ -55,11 +55,13 @@ export class ChatComponent implements OnInit, OnDestroy {
       }
       this.conversations[otherUserId].push(message);
 
-      if (message.from_user_id !== this.selectedUserId) {
+      // Si el mensaje recibido es para la conversación activa, lo marcamos como leído
+      if (message.from_user_id === this.selectedUserId) {
+        this.markConversationAsRead(this.currentUser.id, message.from_user_id);
+      } else {
+        // Si no, actualizamos el contador de no leídos
         this.chatService.fetchUnreadCount();
-    }
-
-      // Si el mensaje es de otra persona y no tenemos esa ventana de chat abierta, suena la notificación
+      }
       if (message.from_user_id !== this.currentUser.id && this.selectedUserId !== message.from_user_id) {
         this.notificationSound.play();
       }
@@ -96,14 +98,23 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.selectedUserId = user.id;
     this.selectedUserName = user.name;
     if (!this.conversations[user.id]) {
+      this.conversations[user.id] = []; // Inicializa para evitar nulls
       this.chatService.getConversation(this.currentUser.id, user.id).subscribe(messages => {
         this.conversations[user.id] = messages;
+        this.markConversationAsRead(this.currentUser.id, user.id);
         this.cdr.detectChanges();
-        this.scrollToBottom(); // 4. Y también aquí
+        this.scrollToBottom();
       });
     } else {
+      // Si ya existía, igual marcamos como leída y actualizamos contadores
+      this.markConversationAsRead(this.currentUser.id, user.id);
       this.scrollToBottom(); // Y si la conversación ya existía
     }
+  }
+  markConversationAsRead(userId: number, otherUserId: number) {
+    this.chatService.markAsRead(userId, otherUserId).subscribe(() => {
+      this.chatService.fetchUnreadCount(); // Actualiza el contador global
+    });
   }
 
   sendMessage(): void {
@@ -123,13 +134,14 @@ export class ChatComponent implements OnInit, OnDestroy {
     }
     this.conversations[this.selectedUserId].push(messageData);
     this.scrollToBottom();
+    this.cdr.detectChanges();
+
     // Luego, envía el mensaje al servidor en segundo plano
     this.chatService.sendMessage(messageData).subscribe({
       error: () => {
         this.notificationService.showError('No se pudo enviar el mensaje.');
         // Opcional: podrías añadir una lógica para marcar el mensaje como "no enviado"
       }
-
     });
 
     this.newMessage = '';

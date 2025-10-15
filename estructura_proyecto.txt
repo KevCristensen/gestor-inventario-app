@@ -1,0 +1,216 @@
+.
+├── analysis-template.html
+├── angular-app
+│   ├── README.md
+│   ├── angular.json
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── public
+│   │   └── favicon.ico
+│   ├── src
+│   │   ├── app
+│   │   │   ├── app.component.css
+│   │   │   ├── app.component.html
+│   │   │   ├── app.component.ts
+│   │   │   ├── app.config.server.ts
+│   │   │   ├── app.config.ts
+│   │   │   ├── app.routes.server.ts
+│   │   │   ├── app.routes.ts
+│   │   │   ├── app.spec.ts
+│   │   │   ├── components
+│   │   │   │   ├── asset-form
+│   │   │   │   │   ├── asset-form.component.css
+│   │   │   │   │   ├── asset-form.component.html
+│   │   │   │   │   ├── asset-form.component.ts
+│   │   │   │   │   └── asset-form.spec.ts
+│   │   │   │   ├── layout
+│   │   │   │   │   ├── layout.component.css
+│   │   │   │   │   ├── layout.component.html
+│   │   │   │   │   ├── layout.component.ts
+│   │   │   │   │   └── layout.spec.ts
+│   │   │   │   ├── product-form
+│   │   │   │   │   ├── product-form.component.css
+│   │   │   │   │   ├── product-form.component.html
+│   │   │   │   │   ├── product-form.component.ts
+│   │   │   │   │   └── product-form.spec.ts
+│   │   │   │   └── provider-form
+│   │   │   │       ├── provider-form.component.css
+│   │   │   │       ├── provider-form.component.html
+│   │   │   │       ├── provider-form.component.ts
+│   │   │   │       └── provider-form.spec.ts
+│   │   │   ├── guards
+│   │   │   │   ├── auth.guard.spec.ts
+│   │   │   │   └── auth.guard.ts
+│   │   │   ├── interceptors
+│   │   │   │   ├── auth-interceptor.spec.ts
+│   │   │   │   └── auth.interceptor.ts
+│   │   │   ├── pages
+│   │   │   │   ├── asset-inventory
+│   │   │   │   │   ├── asset-inventory.component.css
+│   │   │   │   │   ├── asset-inventory.component.html
+│   │   │   │   │   ├── asset-inventory.component.ts
+│   │   │   │   │   └── asset-inventory.spec.ts
+│   │   │   │   ├── asset-movements
+│   │   │   │   │   ├── asset-movements.component.css
+│   │   │   │   │   ├── asset-movements.component.html
+│   │   │   │   │   ├── asset-movements.component.ts
+│   │   │   │   │   └── asset-movements.spec.ts
+│   │   │   │   ├── assets
+│   │   │   │   │   ├── assets.component.css
+│   │   │   │   │   ├── assets.component.html
+│   │   │   │   │   ├── assets.component.ts
+│   │   │   │   │   └── assets.spec.ts
+│   │   │   │   ├── chat
+│   │   │   │   │   ├── chat.component.css
+│   │   │   │   │   ├── chat.component.html
+│   │   │   │   │   ├── chat.component.ts
+│   │   │   │   │   └── chat.spec.ts
+│   │   │   │   ├── consumption-analysis
+│   │   │   │   │   ├── consumption-analysis.component.css
+│   │   │   │   │   ├── consumption-analysis.component.html
+│   │   │   │   │   ├── consumption-analysis.component.ts
+│   │   │   │   │   └── consumption-analysis.spec.ts
+│   │   │   │   ├── dashboard
+│   │   │   │   │   ├── dashboard.component.css
+│   │   │   │   │   ├── dashboard.component.html
+│   │   │   │   │   ├── dashboard.component.ts
+│   │   │   │   │   └── dashboard.spec.ts
+│   │   │   │   ├── global-inventory
+│   │   │   │   │   ├── global-inventory.component.css
+│   │   │   │   │   ├── global-inventory.component.html
+│   │   │   │   │   ├── global-inventory.component.ts
+│   │   │   │   │   └── global-inventory.spec.ts
+│   │   │   │   ├── inventory-exit
+│   │   │   │   │   ├── inventory-exit.component.css
+│   │   │   │   │   ├── inventory-exit.component.html
+│   │   │   │   │   ├── inventory-exit.component.ts
+│   │   │   │   │   └── inventory-exit.spec.ts
+│   │   │   │   ├── inventory-reception
+│   │   │   │   │   ├── inventory-reception.component.css
+│   │   │   │   │   ├── inventory-reception.component.html
+│   │   │   │   │   ├── inventory-reception.component.ts
+│   │   │   │   │   └── inventory-reception.spec.ts
+│   │   │   │   ├── login
+│   │   │   │   │   ├── login.component.css
+│   │   │   │   │   ├── login.component.html
+│   │   │   │   │   ├── login.component.ts
+│   │   │   │   │   └── login.spec.ts
+│   │   │   │   ├── loss-damage-report
+│   │   │   │   │   ├── loss-damage-report.component.css
+│   │   │   │   │   ├── loss-damage-report.component.html
+│   │   │   │   │   ├── loss-damage-report.component.ts
+│   │   │   │   │   └── loss-damage-report.spec.ts
+│   │   │   │   ├── product-lookup
+│   │   │   │   │   ├── product-lookup.component.css
+│   │   │   │   │   ├── product-lookup.component.html
+│   │   │   │   │   ├── product-lookup.component.ts
+│   │   │   │   │   └── product-lookup.spec.ts
+│   │   │   │   ├── products
+│   │   │   │   │   ├── products.component.css
+│   │   │   │   │   ├── products.component.html
+│   │   │   │   │   ├── products.component.ts
+│   │   │   │   │   └── products.spec.ts
+│   │   │   │   ├── providers
+│   │   │   │   │   ├── providers.component.css
+│   │   │   │   │   ├── providers.component.html
+│   │   │   │   │   ├── providers.component.ts
+│   │   │   │   │   └── providers.spec.ts
+│   │   │   │   └── reports
+│   │   │   │       ├── reports.component.css
+│   │   │   │       ├── reports.component.html
+│   │   │   │       ├── reports.component.ts
+│   │   │   │       └── reports.spec.ts
+│   │   │   └── services
+│   │   │       ├── analysis.service.ts
+│   │   │       ├── analysis.spec.ts
+│   │   │       ├── asset-movements.service.ts
+│   │   │       ├── asset-movements.spec.ts
+│   │   │       ├── assets.service.ts
+│   │   │       ├── assets.spec.ts
+│   │   │       ├── auth.service.ts
+│   │   │       ├── auth.spec.ts
+│   │   │       ├── chat.service.ts
+│   │   │       ├── chat.spec.ts
+│   │   │       ├── connection.service.ts
+│   │   │       ├── connection.spec.ts
+│   │   │       ├── dashboard.service.ts
+│   │   │       ├── dashboard.spec.ts
+│   │   │       ├── entities.service.ts
+│   │   │       ├── entities.spec.ts
+│   │   │       ├── inventory.service.ts
+│   │   │       ├── inventory.spec.ts
+│   │   │       ├── notification.service.ts
+│   │   │       ├── notification.spec.ts
+│   │   │       ├── products.service.ts
+│   │   │       ├── products.spec.ts
+│   │   │       ├── providers.service.ts
+│   │   │       ├── providers.spec.ts
+│   │   │       ├── receptions.service.ts
+│   │   │       ├── receptions.spec.ts
+│   │   │       ├── reports.service.ts
+│   │   │       └── reports.spec.ts
+│   │   ├── assets
+│   │   │   └── notification.mp3
+│   │   ├── index.html
+│   │   ├── main.server.ts
+│   │   ├── main.ts
+│   │   ├── server.ts
+│   │   ├── styles.css
+│   │   └── types.d.ts
+│   ├── tailwind.config.js
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   └── tsconfig.spec.json
+├── asset-movement-template.html
+├── backend
+│   ├── db.js
+│   ├── middleware
+│   │   └── auth.middleware.js
+│   └── routes
+│       ├── analysis.routes.js
+│       ├── asset-movements.routes.js
+│       ├── assets.routes.js
+│       ├── auth.routes.js
+│       ├── chat.routes.js
+│       ├── dashboard.routes.js
+│       ├── entities.routes.js
+│       ├── inventory.routes.js
+│       ├── products.routes.js
+│       ├── providers.routes.js
+│       ├── receptions.routes.js
+│       └── reports.routes.js
+├── electron
+│   ├── main.js
+│   ├── preload-analysis.js
+│   ├── preload-loss-damage.js
+│   ├── preload-print.js
+│   ├── preload-receipt.js
+│   └── preload.js
+├── estructura_proyecto.txt
+├── hash_password.js
+├── loss-damage-template.html
+├── main.js
+├── mainOLD.js
+├── package-lock.json
+├── package.json
+├── preload.js
+├── readme.md
+└── unpacked-app
+    ├── backend
+    │   ├── db.js
+    │   ├── middleware
+    │   │   └── auth.middleware.js
+    │   └── routes
+    │       ├── auth.routes.js
+    │       ├── dashboard.routes.js
+    │       ├── entities.routes.js
+    │       ├── inventory.routes.js
+    │       ├── products.routes.js
+    │       ├── providers.routes.js
+    │       ├── receptions.routes.js
+    │       └── reports.routes.js
+    ├── main.js
+    ├── package.json
+    └── preload.js
+
+38 directories, 176 files

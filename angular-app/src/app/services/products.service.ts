@@ -1,17 +1,26 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment'; 
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductsService {
-  private apiUrl = 'http://localhost:3000/api/products';
+  private apiUrl = `${environment.apiUrl}/api/products`; 
 
   constructor(private http: HttpClient) { }
 
-  getProducts(page: number, limit: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}?page=${page}&limit=${limit}`);
+  getProducts(page: number, limit: number, searchTerm?: string): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
+
+    if (searchTerm && searchTerm.trim() !== '') {
+      params = params.set('search', searchTerm);
+    }
+
+    return this.http.get<any>(this.apiUrl, { params });
   }
 
   getAllProducts(): Observable<any[]> {

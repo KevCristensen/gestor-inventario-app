@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ProductsService } from '../../services/products.service';
 import { ProductFormComponent } from '../../components/product-form/product-form.component';
 import { AuthService } from '../../services/auth.service'; 
@@ -7,7 +8,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, ProductFormComponent],
+  imports: [CommonModule, ProductFormComponent, FormsModule],
   templateUrl: './products.component.html',
 })
 export class ProductsComponent implements OnInit {
@@ -20,6 +21,7 @@ export class ProductsComponent implements OnInit {
   itemsPerPage: number = 15;
   totalItems: number = 0;
 
+  searchTerm: string = '';
 
   constructor(
     private productsService: ProductsService,
@@ -32,11 +34,20 @@ export class ProductsComponent implements OnInit {
   }
 
   loadProducts(): void {
-    this.productsService.getProducts(this.currentPage, this.itemsPerPage).subscribe(response => {
+    this.productsService.getProducts(
+      this.currentPage, 
+      this.itemsPerPage,
+      this.searchTerm
+    ).subscribe(response => {
       this.products = response.data;
       this.totalItems = response.total;
       this.cdr.detectChanges();
     });
+  }
+
+  onSearchChange(): void {
+    this.currentPage = 1;
+    this.loadProducts();
   }
 
   goToPage(page: number): void {

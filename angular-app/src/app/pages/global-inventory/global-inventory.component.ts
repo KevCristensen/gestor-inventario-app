@@ -42,35 +42,38 @@ export class GlobalInventoryComponent implements OnInit {
 
     let filteredItems = this.rawInventory;
     if (this.searchTerm.trim() !== '') {
+      const lowerCaseSearch = this.searchTerm.toLowerCase();
       filteredItems = this.rawInventory.filter(item =>
-        item.name.toLowerCase().includes(this.searchTerm.toLowerCase())
+        item.name.toLowerCase().includes(lowerCaseSearch) ||
+        item.barcode.toLowerCase().includes(lowerCaseSearch)
       );
     }
 
     const uniqueColleges = [...new Set(filteredItems.map(item => item.entity_name))];
     this.collegeHeaders = uniqueColleges.sort();
 
+    // Agrupamos por código de barras, que es único para cada producto.
     const groupedByProduct = filteredItems.reduce((acc, item) => {
-      // Initialize if it's the first time seeing this product
-      if (!acc[item.name]) {
-        acc[item.name] = {
-          barcode: item.barcode, // Store the barcode once
+      // Usamos el código de barras como clave única.
+      if (!acc[item.barcode]) {
+        acc[item.barcode] = {
+          name: item.name, // Guardamos el nombre del producto.
           stocksByCollege: {}
         };
       }
-      // Add the stock for the current college
-      acc[item.name].stocksByCollege[item.entity_name] = { 
+      // Añadimos el stock para el colegio actual.
+      acc[item.barcode].stocksByCollege[item.entity_name] = { 
         stock: item.stock, 
         min_stock: item.min_stock_level 
       };
       return acc;
     }, {});
 
-    this.pivotedInventory = Object.keys(groupedByProduct).map(productName => {
+    this.pivotedInventory = Object.keys(groupedByProduct).map(barcode => {
       return {
-        productName: productName,
-        barcode: groupedByProduct[productName].barcode,
-        stocksByCollege: groupedByProduct[productName].stocksByCollege
+        productName: groupedByProduct[barcode].name,
+        barcode: barcode, // La clave ahora es el código de barras.
+        stocksByCollege: groupedByProduct[barcode].stocksByCollege
       };
     });
   }

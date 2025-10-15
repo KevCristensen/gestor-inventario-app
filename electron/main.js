@@ -113,7 +113,7 @@ async function startServer() {
     backendApp.use('/api/analysis', analysisRoutes);
     backendApp.use('/api/assets', isAdmin, assetsRoutes);
     backendApp.use('/api/asset-movements', assetMovementsRoutes); 
-    backendApp.use('/api/chat', chatRoutes); 
+    backendApp.use('/api/chat', chatRoutes); // <-- Habilitamos la API del chat de nuevo
 
     // --- Global Error Handler ---
     backendApp.use((err, req, res, next) => {
@@ -286,11 +286,41 @@ ipcMain.on('print-asset-movement', async (event, movementData) => {
     }
 });
 
+ipcMain.on('print-consolidated-exit-report', async (event, reportData) => {
+    const printWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        show: true, // Cambia a false si no quieres ver la ventana
+        webPreferences: {
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload-consolidated-exit.js')
+        }
+    });
+
+    try {
+        await printWindow.loadFile(path.join(__dirname, '../consolidated-exit-template.html'));
+        printWindow.webContents.send('consolidated-exit-data', reportData);
+    } catch (error) {
+        log.error('Fallo al cargar la ventana de impresión consolidada:', error);
+    }
+});
+
+// Este nuevo manejador recibe la señal desde la ventana de impresión
+// una vez que el contenido ha sido renderizado.
+ipcMain.on('do-print', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) {
+    win.webContents.print({}, (success, errorType) => {
+      if (!success) console.log(`Error de impresión: ${errorType}`);
+    });
+  }
+});
+
 ipcMain.on('print-loss-damage-report', async (event, reportData) => {
     const printWindow = new BrowserWindow({
         width: 800,
         height: 600,
-        show: true,
+        show: true, 
         webPreferences: {
             contextIsolation: true,
             preload: path.join(__dirname, 'preload-loss-damage.js') // Usa el nuevo preload

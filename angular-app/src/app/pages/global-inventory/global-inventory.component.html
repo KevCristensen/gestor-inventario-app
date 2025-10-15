@@ -7,7 +7,7 @@
         type="text" 
         [(ngModel)]="searchTerm" 
         (input)="onSearchChange()"
-        placeholder="Buscar por nombre de producto..."
+        placeholder="Buscar por nombre o código de barras..."
         class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600 focus:ring-blue-500 focus:border-blue-500 transition"
       >
     </div>
@@ -30,7 +30,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (product of pivotedInventory; track product.productName) {
+          @for (product of pivotedInventory; track product.barcode) {
             <tr class="border-b border-gray-700">
               <td class="p-4 font-semibold sticky left-0 bg-gray-800 z-10">{{ product.productName }}</td>
               <td class="p-4 text-gray-400 font-mono">{{ product.barcode }}</td>

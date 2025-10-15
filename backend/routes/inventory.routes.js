@@ -58,4 +58,47 @@ router.post('/exit', async (req, res) => {
     }
 });
 
+// LEER SALIDAS POR RANGO DE FECHAS
+router.get('/exits-by-date', async (req, res) => {
+  try {
+    const { startDate, endDate, entityId } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Se requieren fechas de inicio y fin.' });
+    }
+
+    const endOfDay = `${endDate} 23:59:59`;
+    
+    let query = `
+      SELECT 
+        im.id,
+        im.notes,
+        im.movement_timestamp,
+        u.name as user_name,
+        p.name as product_name,
+        im.quantity
+      FROM inventory_movements im
+      JOIN users u ON im.user_id = u.id
+      JOIN products p ON im.product_id = p.id
+      WHERE im.type = 'salida'
+        AND im.movement_timestamp BETWEEN ? AND ?
+    `;
+    const params = [startDate, endOfDay];
+
+    if (entityId && entityId !== 'all') {
+      query += ' AND im.entity_id = ?';
+      params.push(entityId);
+    }
+
+    query += ' ORDER BY im.movement_timestamp DESC';
+
+    const [rows] = await dbPool.query(query, params);
+
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener las salidas por fecha:", error);
+    res.status(500).json({ error: 'Error al obtener las salidas.' });
+  }
+});
+
 module.exports = router;

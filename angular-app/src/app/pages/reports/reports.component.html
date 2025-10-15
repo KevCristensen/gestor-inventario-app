@@ -1,31 +1,121 @@
-<div class="text-white space-y-8">
-  <h1 class="text-3xl font-bold">Reportes</h1>
+<div class="text-white">
+  <h1 class="text-3xl font-bold mb-6">Reportes</h1>
 
-  <div class="bg-gray-800 rounded-lg shadow p-6">
-    <h2 class="text-2xl font-bold mb-4">Reporte de Movimientos</h2>
-    <p class="text-gray-400 mb-6">
-      Genera un reporte completo de todas las entradas y salidas de inventario.
-    </p>
-    <button (click)="downloadMovementsReport()" [disabled]="isDownloadingMovements" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center">
-      @if (isDownloadingMovements) {
-        <span>Generando...</span>
-      } @else {
-        <span>Descargar Reporte de Movimientos</span>
-      }
+  <!-- Pestañas para seleccionar el tipo de reporte -->
+  <div class="flex border-b border-gray-700 mb-6">
+    <button 
+      (click)="reportType = 'consumption'; loadData()"
+      [ngClass]="{'border-blue-500 text-blue-400': reportType === 'consumption', 'border-transparent text-gray-400 hover:text-white': reportType !== 'consumption'}"
+      class="py-3 px-6 font-semibold border-b-2 transition-colors">
+      Análisis de Consumo
+    </button>
+    <button 
+      (click)="reportType = 'consolidated_exit'; loadData()"
+      [ngClass]="{'border-blue-500 text-blue-400': reportType === 'consolidated_exit', 'border-transparent text-gray-400 hover:text-white': reportType !== 'consolidated_exit'}"
+      class="py-3 px-6 font-semibold border-b-2 transition-colors">
+      Reporte de Salidas
     </button>
   </div>
 
-  <div class="bg-gray-800 rounded-lg shadow p-6">
-    <h2 class="text-2xl font-bold mb-4">Reporte de Recepciones</h2>
-    <p class="text-gray-400 mb-6">
-      Genera un reporte detallado de cada recepción de mercadería, incluyendo proveedor, productos, lotes y fechas.
-    </p>
-    <button (click)="downloadReceptionsReport()" [disabled]="isDownloadingReceptions" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center">
-      @if (isDownloadingReceptions) {
-        <span>Generando...</span>
-      } @else {
-        <span>Descargar Reporte de Recepciones</span>
-      }
-    </button>
+  <!-- Filtros -->
+  <div class="bg-gray-800 p-4 rounded-lg mb-6">
+    <div class="flex flex-wrap items-end gap-4">
+      <div class="flex items-center gap-2">
+        <button (click)="setPeriod('today')" class="bg-gray-700 hover:bg-gray-600 text-sm py-2 px-3 rounded-lg">Hoy</button>
+        <button (click)="setPeriod('this_month')" class="bg-gray-700 hover:bg-gray-600 text-sm py-2 px-3 rounded-lg">Este Mes</button>
+        <button (click)="setPeriod('last_month')" class="bg-gray-700 hover:bg-gray-600 text-sm py-2 px-3 rounded-lg">Mes Pasado</button>
+      </div>
+      <div class="border-l border-gray-600 h-10 mx-2"></div>
+      
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Bodega</label>
+        <select [(ngModel)]="selectedEntityId" (change)="loadData()" class="bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+          <option value="all">Todas las Bodegas</option>
+          @for(entity of entities; track entity.id) { <option [value]="entity.id">{{entity.name}}</option> }
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Desde</label>
+        <input type="date" [(ngModel)]="startDate" (change)="loadData()" class="bg-gray-700 p-2 rounded-lg border border-gray-600 text-gray-200" [style.color-scheme]="'dark'">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Hasta</label>
+        <input type="date" [(ngModel)]="endDate" (change)="loadData()" class="bg-gray-700 p-2 rounded-lg border border-gray-600 text-gray-200" [style.color-scheme]="'dark'">
+      </div>
+      
+      <div class="flex-grow"></div>
+      <button (click)="printReport()" [disabled]="(reportType === 'consumption' && consumptionData.length === 0) || (reportType === 'consolidated_exit' && exitGroups.length === 0)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg disabled:opacity-50">
+        Imprimir Reporte
+      </button>
+    </div>
   </div>
+
+  <!-- Contenido del Reporte -->
+  @if (isLoading) {
+    <div class="bg-gray-800 rounded-lg shadow p-8 text-center text-gray-500">Cargando...</div>
+  } @else {
+    <!-- Pestaña: Análisis de Consumo -->
+    @if (reportType === 'consumption') {
+      <div class="bg-gray-800 rounded-lg shadow p-6">
+        <table class="w-full text-left">
+          <thead class="border-b border-gray-600">
+            <tr>
+              <th class="p-4">Producto</th>
+              <th class="p-4">Bodega</th>
+              <th class="p-4 text-right">Total Salidas</th>
+              <th class="p-4 text-right">Valor del Consumo</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of consumptionData; track $index) {
+              <tr class="border-b border-gray-700">
+                <td class="p-4">{{ item.productName }}</td>
+                <td class="p-4 text-gray-400">{{ item.entityName }}</td>
+                <td class="p-4 text-right font-mono text-xl">{{ item.totalExits }}</td>
+                <td class="p-4 text-right font-mono text-lg text-green-400">${{ item.totalValue | number:'1.0-0' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="p-8 text-center text-gray-500">No se encontraron datos de consumo.</td></tr>
+            }
+          </tbody>
+          <tfoot class="border-t-2 border-gray-500">
+            <tr>
+              <td colspan="3" class="p-4 font-bold text-right text-lg">Total General</td>
+              <td class="p-4 text-right font-mono text-xl text-green-400">${{ totalConsumptionValue | number:'1.0-0' }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    }
+
+    <!-- Pestaña: Reporte Consolidado de Salidas -->
+    @if (reportType === 'consolidated_exit') {
+      @if (exitGroups.length > 0) {
+        <div class="space-y-6">
+          @for (group of exitGroups; track $index) {
+            <div class="bg-gray-800 rounded-lg shadow p-6">
+              <div class="flex justify-between items-start mb-4 border-b border-gray-700 pb-3">
+                <div>
+                  <h2 class="text-xl font-bold text-blue-400">{{ group.notes || 'Salida sin motivo' }}</h2>
+                  <p class="text-sm text-gray-400">Por: {{ group.user_name }}</p>
+                </div>
+                <p class="text-sm text-gray-500">{{ group.timestamp | date:'dd/MM/yyyy HH:mm' }}</p>
+              </div>
+              <ul class="space-y-2">
+                @for (item of group.items; track $index) {
+                  <li class="flex justify-between items-center text-gray-300">
+                    <span>{{ item.name }}</span>
+                    <span class="font-mono bg-gray-700 px-2 py-1 rounded-md text-sm">{{ item.quantity }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="bg-gray-800 rounded-lg shadow p-8 text-center text-gray-500">No se encontraron salidas para el período seleccionado.</div>
+      }
+    }
+  }
 </div>

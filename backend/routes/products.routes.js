@@ -30,21 +30,38 @@ router.post('/', async (req, res) => {
 // LEER todos los productos (CON paginación)
 router.get('/', async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 15;
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 15;
         const offset = (page - 1) * limit;
 
-        const [products] = await dbPool.query(
-            'SELECT * FROM products ORDER BY name ASC LIMIT ? OFFSET ?',
-            [limit, offset]
-        );
-        const [[{ total }]] = await dbPool.query('SELECT COUNT(*) as total FROM products');
+        const { search } = req.query;
+
+        let whereClauses = [];
+        let queryParams = [];
+
+        if (search && search.trim() !== '') {
+            const searchTerm = `%${search}%`;
+            whereClauses.push('(name LIKE ? OR brand LIKE ? OR category LIKE ?)');
+            queryParams.push(searchTerm, searchTerm, searchTerm);
+        }
+
+        const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+        const countQuery = `SELECT COUNT(*) as total FROM products ${whereString}`;
+        const [countRows] = await dbPool.query(countQuery, queryParams);
+        const totalItems = countRows[0].total;
+
+        const dataQuery = `SELECT * FROM products ${whereString} ORDER BY name ASC LIMIT ? OFFSET ?`;
+        const [products] = await dbPool.query(dataQuery, [...queryParams, limit, offset]);
 
         res.json({
             data: products,
-            total: total
+            total: totalItems,
+            currentPage: page,
+            totalPages: Math.ceil(totalItems / limit)
         });
     } catch (error) {
+        console.error("Error al obtener productos con filtros:", error);
         res.status(500).json({ error: 'Error al obtener los productos.' });
     }
 });

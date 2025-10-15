@@ -11,15 +11,15 @@
       <a routerLink="/dashboard" routerLinkActive="bg-blue-600" [routerLinkActiveOptions]="{exact: true}" class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">Dashboard</a>
       <a routerLink="/dashboard/reception" routerLinkActive="bg-blue-600" class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">Recepción</a>
       <a routerLink="/dashboard/exit" routerLinkActive="bg-blue-600" class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">Salida</a>
-      <a routerLink="/dashboard/analysis" routerLinkActive="bg-blue-600" class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">Análisis</a>
-      <a routerLink="/dashboard/chat" routerLinkActive="bg-blue-600" class="relative flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+      <a routerLink="/dashboard/reports" routerLinkActive="bg-blue-600" class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">Reportes</a>
+      <!-- <a routerLink="/dashboard/chat" routerLinkActive="bg-blue-600" class="relative flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
         Chat
         @if (unreadChatMessages$ | async; as count) {
           @if (count > 0) {
             <span class="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-gray-800"></span>
           }
         }
-      </a>
+      </a> -->
 
       @if (userRole === 'admin') {
         <div class="pt-4 mt-4 border-t border-gray-700">
@@ -27,7 +27,6 @@
           <a routerLink="/dashboard/products" routerLinkActive="bg-blue-600" class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">Productos</a>
           <a routerLink="/dashboard/product-lookup" routerLinkActive="bg-blue-600" class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">Testear Producto</a>
           <a routerLink="/dashboard/providers" routerLinkActive="bg-blue-600" class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">Proveedores</a>
-          <a routerLink="/dashboard/reports" routerLinkActive="bg-blue-600" class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">Reportes</a>
           <a routerLink="/dashboard/global-inventory" routerLinkActive="bg-blue-600" class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">Inv. Global</a>
         </div>
         <div class="pt-4 mt-4 border-t border-gray-700">

@@ -49,7 +49,8 @@
       "electron/**/*",
       "analysis-template.html",
       "asset-movement-template.html",
-      "loss-damage-template.html"
+      "loss-damage-template.html",
+      "consolidated-exit-template.html"
     ],
     "extraResources": [
       ".env"

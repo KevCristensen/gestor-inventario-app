@@ -30,7 +30,7 @@ export class LayoutComponent implements OnInit {
     private chatService: ChatService
   ) {
     this.isOnline$ = this.connectionService.isOnline$;
-    this.unreadChatMessages$ = this.chatService.unreadMessages$;
+    this.unreadChatMessages$ = this.chatService.unreadCount$;
   }
 
   ngOnInit(): void {
