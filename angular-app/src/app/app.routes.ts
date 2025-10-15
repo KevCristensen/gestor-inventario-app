@@ -8,6 +8,7 @@ import { ProductsComponent } from './pages/products/products.component';
 import { InventoryReceptionComponent } from './pages/inventory-reception/inventory-reception.component';
 import { InventoryExitComponent } from './pages/inventory-exit/inventory-exit.component';
 import { ReportsComponent } from './pages/reports/reports.component';
+import { GlobalInventoryComponent } from './pages/global-inventory/global-inventory.component';
 import { AssetsComponent } from './pages/assets/assets.component';
 import { AssetMovementsComponent } from './pages/asset-movements/asset-movements.component';
 import { AssetInventoryComponent } from './pages/asset-inventory/asset-inventory.component';
@@ -28,6 +29,7 @@ export const routes: Routes = [
             { path: 'reception', component: InventoryReceptionComponent }, 
             { path: 'exit', component: InventoryExitComponent },
             { path: 'reports', component: ReportsComponent },
+            { path: 'global-inventory', component: GlobalInventoryComponent },
             { path: 'loss-damage-report', component: LossDamageReportComponent },
             { path: 'chat', component: ChatComponent }, 
             { path: 'assets', component: AssetsComponent },
