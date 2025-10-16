@@ -51,7 +51,7 @@
       "asset-movement-template.html",
       "loss-damage-template.html",
       "consolidated-exit-template.html",
-      "task-details-template.html"
+      "task-detail-template.html"
     ],
     "extraResources": [
       ".env"
