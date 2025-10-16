@@ -65,7 +65,7 @@ export class InventoryExitComponent implements OnInit, AfterViewInit {
           this.exitData.items.push({
             product_id: product.id,
             name: product.name,
-            quantity: 1,
+            quantity: 1
           });
         }
         this.cdr.detectChanges();

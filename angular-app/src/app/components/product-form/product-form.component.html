@@ -30,9 +30,11 @@
           <div>
             <label for="unit_of_measure" class="block mb-2 text-sm font-medium text-gray-300">Unidad de Medida</label>
             <select id="unit_of_measure" [(ngModel)]="product.unit_of_measure" name="unit_of_measure" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
-              @for (unit of units; track unit) {
-                <option [value]="unit">{{ unit }}</option>
-              }
+              <option value="un">Unidad (un)</option>
+              <option value="kg">Kilo (kg)</option>
+              <option value="g">Gramos (g)</option>
+              <option value="L">Litro (L)</option>
+              <option value="ml">Mililitro (ml)</option>
             </select>
           </div>
           <div>

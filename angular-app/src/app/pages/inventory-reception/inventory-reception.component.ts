@@ -20,13 +20,16 @@ export class InventoryReceptionComponent implements OnInit, AfterViewInit {
   @ViewChild('barcodeInput') barcodeInput!: ElementRef;
   
   providerList: any[] = [];
-  reception = {
-    provider_id: null,
-    user_id: 1, // Fijo por ahora, luego lo tomaremos de la sesión
+  reception: { provider_id: number | null; user_id: number | null; invoice_number: string; transport_temp: number | null; items: any[]; entity_id: number | null; } = {
+    provider_id: null as number | null,
+    user_id: 1 as number | null,
+  // reception = {
+  //   provider_id: null,
+  //   user_id: 1, // Fijo por ahora, luego lo tomaremos de la sesión
     invoice_number: '',
-    transport_temp: null,
+    transport_temp: null as number | null,
     items: [] as any[],
-    entity_id: null, 
+    entity_id: null as number | null, 
   };
   entityName: string = '';
   isSaving = false; 

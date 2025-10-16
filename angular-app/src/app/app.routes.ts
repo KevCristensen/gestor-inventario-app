@@ -10,6 +10,8 @@ import { InventoryExitComponent } from './pages/inventory-exit/inventory-exit.co
 import { ReportsComponent } from './pages/reports/reports.component';
 import { GlobalInventoryComponent } from './pages/global-inventory/global-inventory.component';
 import { AssetsComponent } from './pages/assets/assets.component';
+import { TaskDetailComponent } from './pages/task-detail/task-detail.component'; // <-- NUEVA LÍNEA
+import { TasksComponent } from './pages/tasks/tasks.component'; // <-- NUEVA LÍNEA
 import { AssetMovementsComponent } from './pages/asset-movements/asset-movements.component';
 import { AssetInventoryComponent } from './pages/asset-inventory/asset-inventory.component';
 import { ProductLookupComponent } from './pages/product-lookup/product-lookup.component';
@@ -30,6 +32,8 @@ export const routes: Routes = [
             { path: 'exit', component: InventoryExitComponent },
             { path: 'reports', component: ReportsComponent },
             { path: 'global-inventory', component: GlobalInventoryComponent },
+            { path: 'tasks', component: TasksComponent }, // <-- NUEVA LÍNEA
+            { path: 'tasks/:id', component: TaskDetailComponent }, // <-- NUEVA LÍNEA
             { path: 'loss-damage-report', component: LossDamageReportComponent },
             { path: 'chat', component: ChatComponent }, 
             { path: 'assets', component: AssetsComponent },

@@ -69,7 +69,7 @@ router.get('/', async (req, res) => {
 //LEER TODOS los productos (sin paginación, para listas)
 router.get('/all/list', async (req, res) => {
     try {
-        const [products] = await dbPool.query('SELECT id, name, barcode FROM products ORDER BY name ASC');
+        const [products] = await dbPool.query('SELECT id, name, barcode, brand FROM products ORDER BY name ASC');
         res.json(products);
     } catch (error) {
         res.status(500).json({ error: 'Error al obtener la lista de productos.' });

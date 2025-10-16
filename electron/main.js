@@ -50,6 +50,7 @@ const analysisRoutes = require('../backend/routes/analysis.routes');
 const assetsRoutes = require('../backend/routes/assets.routes');
 const assetMovementsRoutes = require('../backend/routes/asset-movements.routes'); 
 const chatRoutes = require('../backend/routes/chat.routes');
+const tasksRoutes = require('../backend/routes/tasks.routes'); // <-- NUEVA LÍNEA
 
 let mainWindow;
 
@@ -114,6 +115,7 @@ async function startServer() {
     backendApp.use('/api/assets', isAdmin, assetsRoutes);
     backendApp.use('/api/asset-movements', assetMovementsRoutes); 
     backendApp.use('/api/chat', chatRoutes); // <-- Habilitamos la API del chat de nuevo
+    backendApp.use('/api/tasks', tasksRoutes); // <-- NUEVA LÍNEA
 
     // --- Global Error Handler ---
     backendApp.use((err, req, res, next) => {
@@ -302,6 +304,25 @@ ipcMain.on('print-consolidated-exit-report', async (event, reportData) => {
         printWindow.webContents.send('consolidated-exit-data', reportData);
     } catch (error) {
         log.error('Fallo al cargar la ventana de impresión consolidada:', error);
+    }
+});
+
+ipcMain.on('print-task-detail', async (event, taskData) => {
+    const printWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        show: true, // Cambia a false si no quieres ver la ventana
+        webPreferences: {
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload-task-detail.js')
+        }
+    });
+
+    try {
+        await printWindow.loadFile(path.join(__dirname, '../task-detail-template.html'));
+        printWindow.webContents.send('task-detail-data', taskData);
+    } catch (error) {
+        log.error('Fallo al cargar la ventana de impresión de pauta:', error);
     }
 });
 

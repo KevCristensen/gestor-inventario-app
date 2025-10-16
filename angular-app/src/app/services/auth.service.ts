@@ -3,6 +3,15 @@ import { isPlatformBrowser } from '@angular/common'; // Importa esta función
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 
+// Definimos y exportamos la interfaz User
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'user';
+  entity_id: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -41,7 +50,7 @@ export class AuthService {
   }
 
   // Nuevo método para obtener los datos del usuario logueado
-  getCurrentUser(): any | null {
+  getCurrentUser(): User | null {
     if (this.isBrowser) {
       const user = sessionStorage.getItem(this.USER_KEY);
       return user ? JSON.parse(user) : null;

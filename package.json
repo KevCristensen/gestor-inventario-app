@@ -1,6 +1,6 @@
 {
   "name": "gestor-inventario",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "Gestor de Inventario de Alimentos",
   "main": "electron/main.js",
   "author": "Kevin Cristensen (KC Smart Systems)",
@@ -50,7 +50,8 @@
       "analysis-template.html",
       "asset-movement-template.html",
       "loss-damage-template.html",
-      "consolidated-exit-template.html"
+      "consolidated-exit-template.html",
+      "task-details-template.html"
     ],
     "extraResources": [
       ".env"
