@@ -1,4 +1,5 @@
 <div class="text-white">
+  <!-- Encabezado y Filtros -->
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-3xl font-bold">Pautas de Preparación</h1>
     <div class="flex items-center gap-4">
@@ -13,6 +14,7 @@
     </div>
   </div>
 
+  <!-- Lista de Pautas -->
   @if (isLoading) {
     <div class="text-center p-8 text-gray-500">Cargando pautas...</div>
   } @else if (tasks.length > 0) {
@@ -35,7 +37,7 @@
               </span>
             </div>
             <p class="text-sm text-gray-400 mb-4">Vence: {{ task.due_date | date:'dd/MM/yyyy' }}</p>
-            <p class="text-gray-300 text-sm mb-4">{{ task.description }}</p>
+            <p class="text-gray-300 text-sm mb-4 line-clamp-2">{{ task.description }}</p>
           </div>
           <div class="border-t border-gray-700 pt-4 mt-auto">
             <p class="text-xs text-gray-500">Creado por: {{ task.creator_name }}</p>
@@ -45,7 +47,7 @@
     </div>
   } @else {
     <div class="bg-gray-800 rounded-lg shadow p-8 text-center text-gray-500">
-      No hay pautas creadas para esta bodega.
+      No hay pautas creadas para el mes seleccionado.
     </div>
   }
 </div>
@@ -53,30 +55,26 @@
 <!-- Modal para Crear Nueva Tarea -->
 @if (isModalOpen) {
   <div class="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50">
-    <div class="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-3xl text-white transform transition-all duration-300 max-h-[90vh] flex flex-col">
+    <div class="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-4xl text-white transform transition-all duration-300 max-h-[90vh] flex flex-col">
       <h2 class="text-2xl font-bold mb-6">Nueva Pauta</h2>
       
-      <form #taskForm="ngForm" (ngSubmit)="createTask()" class="flex-grow overflow-y-auto pr-4">
-        <div class="space-y-4">
+      <form id="taskFormElement" #taskForm="ngForm" (ngSubmit)="createTask()" class="flex-grow overflow-y-auto pr-4">
+        <div class="space-y-6">
           <div>
             <label for="title" class="block text-sm font-medium text-gray-300 mb-1">Título de la Pauta</label>
             <input type="text" id="title" [(ngModel)]="newTask.title" name="title" required class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
           </div>
-          <div>
-            <label for="description" class="block text-sm font-medium text-gray-300 mb-1">Descripción / Instrucciones</label>
-            <textarea id="description" [(ngModel)]="newTask.description" name="description" rows="3" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600"></textarea>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
+          
+          <div class="grid grid-cols-2 gap-6">
             <div>
               <label for="due_date" class="block text-sm font-medium text-gray-300 mb-1">Fecha de Entrega</label>
               <input type="date" id="due_date" [(ngModel)]="newTask.due_date" name="due_date" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600" [style.color-scheme]="'dark'">
             </div>
             <div>
               <label for="assignedUsers" class="block text-sm font-medium text-gray-300 mb-1">Asignar a</label>
-              <!-- Usamos checkboxes para una mejor experiencia en selección múltiple -->
               <div class="bg-gray-700 p-2.5 rounded-lg border border-gray-600 h-24 overflow-y-auto">
                 @for(user of allUsers; track user.id) {
-                  <label class="flex items-center space-x-2 p-1 hover:bg-gray-600 rounded-md">
+                  <label class="flex items-center space-x-2 p-1 hover:bg-gray-600 rounded-md cursor-pointer">
                     <input type="checkbox" [value]="user.id" (change)="toggleUserAssignment(user.id)" class="form-checkbox bg-gray-600 border-gray-500 text-blue-500 focus:ring-blue-500">
                     <span>{{ user.name }}</span>
                   </label>
@@ -85,15 +83,139 @@
             </div>
           </div>
 
+          <div>
+            <label for="description" class="block text-sm font-medium text-gray-300 mb-1">Descripción / Instrucciones Generales</label>
+            <textarea id="description" [(ngModel)]="newTask.description" name="description" rows="2" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600"></textarea>
+          </div>
+
+          <!-- Constructor de Menús y Raciones -->
+          <div class="border-t border-gray-700 pt-4">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-lg font-semibold">Detalle de Menús (para Cocina)</h3>
+              <button type="button" (click)="addMenuSection()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1 px-3 rounded-lg">+ Añadir Sección de Menú</button>
+            </div>
+            
+            <div class="space-y-4">
+              @for(section of newTask.menuSections; track section; let sectionIndex = $index) {
+                <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+                  <div class="flex justify-between items-center mb-3">
+                    <input type="text" [(ngModel)]="section.title" [name]="'section_title_' + sectionIndex" class="text-lg font-bold bg-transparent border-b border-gray-600 focus:border-blue-500 outline-none w-full" placeholder="Título de la Sección (ej: MENU PRINCIPAL 120 RACIONES)">
+                    <button type="button" (click)="removeMenuSection(sectionIndex)" class="text-red-400 hover:text-red-300 text-xl font-bold leading-none ml-4">&times;</button>
+                  </div>
+
+                  <div class="space-y-3 pl-4">
+                    @for(item of section.items; track item; let itemIndex = $index) {
+                      <div class="bg-gray-800 p-3 rounded-md border border-gray-700">
+                        @if(item.type === 'table' || item.type === 'postre' || item.type === 'salad') {
+                          <input type="text" [(ngModel)]="item.rationsTitle" [name]="'item_rations_title_' + sectionIndex + '_' + itemIndex" class="text-sm font-semibold bg-transparent border-b border-gray-600 focus:border-blue-500 outline-none w-full mb-2" placeholder="Título de Raciones (ej: MENU 210 RACIONES)">
+                        }
+                        <div class="flex justify-between items-center mb-2">
+                          <input type="text" [(ngModel)]="item.title" [name]="'item_title_' + sectionIndex + '_' + itemIndex" class="font-semibold bg-transparent border-b border-gray-600 focus:border-blue-500 outline-none w-full" placeholder="Título del Plato o Ítem">
+                          <button type="button" (click)="removeMenuItem(sectionIndex, itemIndex)" class="text-red-400 hover:text-red-300 text-lg font-bold leading-none ml-2">&times;</button>
+                        </div>
+
+                        @if(item.type === 'table') {
+                          <!-- Tabla de Ingredientes -->
+                          <div class="text-xs space-y-1">
+                            <div class="grid grid-cols-12 gap-2 font-semibold text-gray-400 items-center">
+                              <div class="col-span-5">PRODUCTO</div>
+                              <div class="col-span-2">GRAMAJE</div>
+                              <div class="col-span-2">CANTIDAD</div>
+                              <div class="col-span-2">TOTAL</div>
+                              <div class="col-span-1 text-center">Dest.</div>
+                            </div>
+                            @for(ingredient of item.ingredients; track ingredient; let ingIndex = $index) {
+                              <div class="grid grid-cols-12 gap-2 items-center p-1 rounded" [ngClass]="{'bg-yellow-900/50': ingredient.isHighlighted}">
+                                <input type="text" [(ngModel)]="ingredient.product" [name]="'ing_product_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-5 bg-gray-700 p-1 rounded">
+                                <input type="text" [(ngModel)]="ingredient.gramaje" [name]="'ing_gramaje_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-2 bg-gray-700 p-1 rounded">
+                                <input type="text" [(ngModel)]="ingredient.cantidad" [name]="'ing_cantidad_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-2 bg-gray-700 p-1 rounded">
+                                <input type="text" [(ngModel)]="ingredient.total" [name]="'ing_total_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-2 bg-gray-700 p-1 rounded">
+                                <div class="col-span-1 flex justify-center items-center">
+                                  <input type="checkbox" [(ngModel)]="ingredient.isHighlighted" [name]="'ing_highlight_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="form-checkbox bg-gray-600 border-gray-500 text-yellow-500 focus:ring-yellow-500 h-4 w-4">
+                                  <button type="button" (click)="removeIngredient(sectionIndex, itemIndex, ingIndex)" class="text-red-500 hover:text-red-400 text-lg ml-1">&times;</button>
+                                </div>
+                              </div>
+                            }
+                            <button type="button" (click)="addIngredient(sectionIndex, itemIndex)" class="text-green-400 text-xs mt-2">+ Añadir Ingrediente</button>
+                          </div>
+                        } @else if (item.type === 'postre') {
+                          <!-- Tabla de Postres -->
+                          <div class="text-xs space-y-1">
+                            <div class="grid grid-cols-12 gap-2 font-semibold text-gray-400 items-center">
+                              <div class="col-span-9">PRODUCTO</div>
+                              <div class="col-span-2">GRAMAJE</div>
+                              <div class="col-span-1 text-center">Dest.</div>
+                            </div>
+                            @for(ingredient of item.ingredients; track ingredient; let ingIndex = $index) {
+                              <div class="grid grid-cols-12 gap-2 items-center p-1 rounded" [ngClass]="{'bg-yellow-900/50': ingredient.isHighlighted}">
+                                <input type="text" [(ngModel)]="ingredient.product" [name]="'postre_product_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-9 bg-gray-700 p-1 rounded">
+                                <input type="text" [(ngModel)]="ingredient.gramaje" [name]="'postre_gramaje_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-2 bg-gray-700 p-1 rounded">
+                                <div class="col-span-1 flex justify-center items-center">
+                                  <input type="checkbox" [(ngModel)]="ingredient.isHighlighted" [name]="'postre_highlight_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="form-checkbox bg-gray-600 border-gray-500 text-yellow-500 focus:ring-yellow-500 h-4 w-4">
+                                  <button type="button" (click)="removeIngredient(sectionIndex, itemIndex, ingIndex)" class="text-red-500 hover:text-red-400 text-lg ml-1">&times;</button>
+                                </div>
+                              </div>
+                            }
+                            <button type="button" (click)="addIngredient(sectionIndex, itemIndex)" class="text-green-400 text-xs mt-2">+ Añadir Postre</button>
+                          </div>
+                        } @else if (item.type === 'salad') {
+                          <!-- Tabla de Salad Bar -->
+                          <div class="text-xs space-y-1">
+                            <div class="grid grid-cols-12 gap-2 font-semibold text-gray-400 items-center">
+                              <div class="col-span-9">PRODUCTO</div>
+                              <div class="col-span-2">FUENTES</div>
+                              <div class="col-span-1 text-center">Dest.</div>
+                            </div>
+                            @for(ingredient of item.ingredients; track ingredient; let ingIndex = $index) {
+                              <div class="grid grid-cols-12 gap-2 items-center p-1 rounded" [ngClass]="{'bg-yellow-900/50': ingredient.isHighlighted}">
+                                <input type="text" [(ngModel)]="ingredient.product" [name]="'salad_product_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-9 bg-gray-700 p-1 rounded">
+                                <input type="text" [(ngModel)]="ingredient.fuentes" [name]="'salad_fuentes_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-2 bg-gray-700 p-1 rounded">
+                                <div class="col-span-1 flex justify-center items-center">
+                                  <input type="checkbox" [(ngModel)]="ingredient.isHighlighted" [name]="'salad_highlight_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="form-checkbox bg-gray-600 border-gray-500 text-yellow-500 focus:ring-yellow-500 h-4 w-4">
+                                  <button type="button" (click)="removeIngredient(sectionIndex, itemIndex, ingIndex)" class="text-red-500 hover:text-red-400 text-lg ml-1">&times;</button>
+                                </div>
+                              </div>
+                            }
+                            <button type="button" (click)="addIngredient(sectionIndex, itemIndex)" class="text-green-400 text-xs mt-2">+ Añadir Ítem de Salad Bar</button>
+                          </div>
+                        } @else {
+                          <!-- Ítem de solo texto -->
+                          <textarea [(ngModel)]="item.description" [name]="'item_desc_' + sectionIndex + '_' + itemIndex" rows="2" class="w-full bg-gray-700 p-2 rounded-lg border border-gray-600 text-sm" placeholder="Descripción..."></textarea>
+                        }
+                        @if(item.type === 'table' || item.type === 'postre' || item.type === 'salad') {
+                          <div class="mt-3">
+                            <h5 class="text-xs text-gray-400 mb-1">Notas / Recomendaciones</h5>
+                            @for(note of item.notes; track note; let noteIndex = $index) {
+                              <div class="flex items-center gap-2 mb-1">
+                                <input type="text" [(ngModel)]="item.notes[noteIndex]" [name]="'note_' + sectionIndex + '_' + itemIndex + '_' + noteIndex" class="w-full bg-gray-700 p-1 rounded text-sm" placeholder="*Añadir nota...">
+                                <button type="button" (click)="removeNote(sectionIndex, itemIndex, noteIndex)" class="text-red-500 hover:text-red-400 text-lg">&times;</button>
+                              </div>
+                            }
+                            <button type="button" (click)="addNote(sectionIndex, itemIndex)" class="text-green-400 text-xs mt-1">+ Añadir Nota</button>
+                          </div>
+                        }
+                      </div>
+                    }
+                    <div class="flex gap-3 mt-2">
+                      <button type="button" (click)="addMenuItem(sectionIndex, 'table')" class="text-blue-400 text-xs">+ Añadir Plato (con tabla)</button>
+                      <button type="button" (click)="addMenuItem(sectionIndex, 'text')" class="text-blue-400 text-xs">+ Añadir Ítem (solo texto)</button>
+                      <button type="button" (click)="addMenuItem(sectionIndex, 'postre')" class="text-blue-400 text-xs">+ Añadir Postre</button>
+                      <button type="button" (click)="addMenuItem(sectionIndex, 'salad')" class="text-blue-400 text-xs">+ Añadir Salad Bar</button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
           <!-- Sección de Productos Requeridos -->
           <div class="border-t border-gray-700 pt-4">
-            <h3 class="text-lg font-semibold mb-2">Productos Requeridos</h3>
+            <h3 class="text-lg font-semibold mb-3">Productos Requeridos (para Bodega)</h3>
             <div class="flex items-end gap-2 mb-4">
               <div class="flex-grow">
                 <div class="relative">
-                  <label class="block text-sm font-medium text-gray-300 mb-1">Buscar Producto</label>
+                  <label class="block text-sm font-medium text-gray-300 mb-1">Buscar Producto o Añadir Genérico</label>
                   <input type="text" [(ngModel)]="productSearchTerm" (ngModelChange)="filterProducts()" name="product_search" placeholder="Ej: Arroz, Carne, Código..." class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
-                  <!-- Lista de resultados de búsqueda -->
                   @if (filteredProducts.length > 0 && productSearchTerm) {
                     <ul class="absolute z-10 w-full bg-gray-600 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg">
                       @for (product of filteredProducts; track product.id) {
@@ -117,27 +239,27 @@
                   }
                 </select>
               </div>
-              <button type="button" (click)="addProductToTask()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-lg">+</button>
+              <button type="button" (click)="addProductToTask()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-lg self-end">+</button>
             </div>
 
             <!-- Lista de productos añadidos -->
-            <ul class="space-y-2">
-              @for(item of newTask.requiredProducts; track item.product_id) {
-                <li class="flex justify-between items-center bg-gray-700 p-2 rounded-md">
-                  <span>{{ item.name }} ({{ item.required_quantity }} {{ item.unit }})</span>
-                  <div class="flex items-center gap-2">
-                    <button type="button" (click)="removeProductFromTask(item.product_id)" class="text-red-400 hover:text-red-300">&times;</button>
-                  </div>
-                </li>
-              }
-            </ul>
+            @if(newTask.requiredProducts.length > 0) {
+              <ul class="space-y-2 max-h-40 overflow-y-auto bg-gray-900 p-3 rounded-lg">
+                @for(item of newTask.requiredProducts; track item.name) {
+                  <li class="flex justify-between items-center bg-gray-700 p-2 rounded-md text-sm">
+                    <span>{{ item.name }} ({{ item.required_quantity }} {{ item.unit }})</span>
+                    <button type="button" (click)="removeProductFromTask(item.product_id || item.name)" class="text-red-400 hover:text-red-300 text-xl font-bold leading-none">&times;</button>
+                  </li>
+                }
+              </ul>
+            }
           </div>
         </div>
       </form>
 
-      <div class="flex justify-end mt-8 space-x-4 border-t border-gray-700 pt-6">
+      <div class="flex justify-end mt-6 space-x-4 border-t border-gray-700 pt-6">
         <button type="button" (click)="closeModal()" class="px-5 py-2.5 rounded-lg bg-gray-600 hover:bg-gray-500 font-medium">Cancelar</button>
-        <button type="submit" (click)="createTask()" [disabled]="!taskForm.valid" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 font-medium disabled:opacity-50">Guardar Pauta</button>
+        <button type="submit" form="taskFormElement" [disabled]="!taskForm.valid" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 font-medium disabled:opacity-50">Guardar Pauta</button>
       </div>
     </div>
   </div>

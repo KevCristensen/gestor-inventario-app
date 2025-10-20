@@ -109,6 +109,12 @@ window.addEventListener('DOMContentLoaded', () => {
         </ul>
       </div>
 
+      <!-- NUEVO: Sección de Menús y Raciones -->
+      <div class="section">
+        <h2>Detalle de Menús (Cocina)</h2>
+        <div class="menu-details">${task.menu_details || '<p>No hay detalles de menú.</p>'}</div>
+      </div>
+
       <div class="footer">
         <p>Documento generado por Gestor de Inventario.</p>
       </div>

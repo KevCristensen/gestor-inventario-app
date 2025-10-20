@@ -12,6 +12,9 @@ router.get('/:id', taskController.getTaskById);
 // Crear una nueva tarea (solo para administradores)
 router.post('/', isAdmin, taskController.createTask);
 
+// Actualizar una tarea existente
+router.put('/:id', isAdmin, taskController.updateTask);
+
 // Eliminar una tarea
 router.delete('/:id', isAdmin, taskController.deleteTask);
 

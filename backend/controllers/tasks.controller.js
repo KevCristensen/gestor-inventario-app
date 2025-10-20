@@ -173,7 +173,7 @@ exports.setChosenProduct = async (req, res) => {
  * Todo se ejecuta dentro de una transacción para garantizar la integridad de los datos.
  */
 exports.createTask = async (req, res) => {
-    const { title, description, due_date, entity_id, created_by, assignedUsers, requiredProducts } = req.body;
+    const { title, description, due_date, entity_id, created_by, assignedUsers, requiredProducts, menu_details } = req.body;
 
     if (!title || !entity_id || !created_by) {
         return res.status(400).json({ error: 'Faltan datos requeridos (título, entidad, creador).' });
@@ -186,8 +186,8 @@ exports.createTask = async (req, res) => {
 
         // 1. Insertar la tarea principal
         const [taskResult] = await connection.query(
-            'INSERT INTO tasks (title, description, due_date, entity_id, created_by) VALUES (?, ?, ?, ?, ?)',
-            [title, description, due_date, entity_id, created_by]
+            'INSERT INTO tasks (title, description, due_date, entity_id, created_by, menu_details) VALUES (?, ?, ?, ?, ?, ?)',
+            [title, description, due_date, entity_id, created_by, menu_details]
         );
         const taskId = taskResult.insertId;
 
@@ -216,6 +216,57 @@ exports.createTask = async (req, res) => {
         if (connection) await connection.rollback();
         console.error("Error al crear la tarea:", error);
         res.status(500).json({ error: 'Error al crear la tarea.', details: error.message });
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+/**
+ * Actualiza una tarea existente, incluyendo sus asignaciones y productos.
+ */
+exports.updateTask = async (req, res) => {
+    const { id } = req.params;
+    const { title, description, due_date, assignedUsers, requiredProducts, menu_details } = req.body;
+
+    if (!title) {
+        return res.status(400).json({ error: 'El título es requerido.' });
+    }
+
+    let connection;
+    try {
+        connection = await dbPool.getConnection();
+        await connection.beginTransaction();
+
+        // 1. Actualizar la tarea principal
+        await connection.query(
+            'UPDATE tasks SET title = ?, description = ?, due_date = ?, menu_details = ? WHERE id = ?',
+            [title, description, due_date, menu_details, id]
+        );
+
+        // 2. Actualizar usuarios asignados (borrar y re-insertar)
+        await connection.query('DELETE FROM task_assignments WHERE task_id = ?', [id]);
+        if (assignedUsers && assignedUsers.length > 0) {
+            const assignmentValues = assignedUsers.map(userId => [id, userId]);
+            await connection.query('INSERT INTO task_assignments (task_id, user_id) VALUES ?', [assignmentValues]);
+        }
+
+        // 3. Actualizar productos requeridos (borrar y re-insertar)
+        await connection.query('DELETE FROM task_products WHERE task_id = ?', [id]);
+        if (requiredProducts && requiredProducts.length > 0) {
+            const productValues = requiredProducts.map(p => [id, p.product_id, p.required_quantity, p.unit, p.product_id ? null : p.name]);
+            await connection.query(
+                'INSERT INTO task_products (task_id, product_id, required_quantity, required_unit, generic_product_name) VALUES ?',
+                [productValues]
+            );
+        }
+
+        await connection.commit();
+        res.json({ message: 'Pauta actualizada exitosamente.' });
+
+    } catch (error) {
+        if (connection) await connection.rollback();
+        console.error("Error al actualizar la tarea:", error);
+        res.status(500).json({ error: 'Error al actualizar la tarea.', details: error.message });
     } finally {
         if (connection) connection.release();
     }

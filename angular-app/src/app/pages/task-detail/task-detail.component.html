@@ -19,6 +19,9 @@
                 }">
             {{ task.status }}
           </span>
+          <button (click)="editTask()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+            Editar
+          </button>
           <button (click)="printTask()" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">
             Imprimir
           </button>
@@ -47,6 +50,12 @@
           <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2">Descripción</h2>
           <p class="text-gray-300 whitespace-pre-wrap">{{ task.description || 'No hay descripción.' }}</p>
         </div>
+        <!-- NUEVO: Detalle de Menús y Raciones -->
+        <div class="bg-gray-800 rounded-lg shadow p-6">
+          <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2">Detalle de Menús (Cocina)</h2>
+          <div class="menu-details-view" [innerHTML]="task.menu_details || '<p class=\'text-gray-500\'>No hay detalles de menú.</p>'"></div>
+        </div>
+        <!-- FIN NUEVO -->
         <div class="bg-gray-800 rounded-lg shadow p-6">
           <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2">Personal Asignado</h2>
           @if (task.assignedUsers && task.assignedUsers.length > 0) {
@@ -86,11 +95,17 @@
                               Stock: {{ suggestion.current_stock | number }} un. | Necesitas: {{ calculateNeededUnits(reqProduct, suggestion) }} un.
                             </p>
                           </div>
-                          <button (click)="selectProductForRequirement(reqProduct.task_product_id, suggestion.id)" 
-                                  [disabled]="reqProduct.chosen_product_id === suggestion.id"
-                                  class="text-xs px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed">
-                            {{ reqProduct.chosen_product_id === suggestion.id ? 'Elegido' : 'Elegir' }}
-                          </button>
+                          @if (reqProduct.chosen_product_id === suggestion.id) {
+                            <button (click)="selectProductForRequirement(reqProduct.task_product_id, null)" 
+                                    class="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-500">
+                              Quitar
+                            </button>
+                          } @else {
+                            <button (click)="selectProductForRequirement(reqProduct.task_product_id, suggestion.id)" 
+                                    class="text-xs px-2 py-1 rounded bg-blue-600 hover:bg-blue-500">
+                              Elegir
+                            </button>
+                          }
                         </div>
                       }
                     } @empty {

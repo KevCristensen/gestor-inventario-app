@@ -1,8 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
 @import "tailwindcss";
 @import 'ngx-toastr/toastr';
-
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -11,4 +9,56 @@
 body {
   background-color: #111827;
   color: #e5e7eb;
+}
+
+/* Estilos para la vista de detalles del menú en la página */
+.menu-details-view {
+  color: #d1d5db; /* gray-300 */
+}
+
+.menu-details-view h1, .menu-details-view h2, .menu-details-view h3 {
+  font-weight: 700;
+  border-bottom: 1px solid #4b5563; /* gray-600 */
+  padding-bottom: 0.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.menu-details-view h1 { font-size: 1.5rem; } /* 24px */
+.menu-details-view h2 { font-size: 1.25rem; } /* 20px */
+.menu-details-view h3 { font-size: 1.125rem; } /* 18px */
+
+.menu-details-view table {
+  width: 100%;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border-collapse: collapse;
+}
+
+.menu-details-view th, .menu-details-view td {
+  border: 1px solid #4b5563; /* gray-600 */
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.menu-details-view th {
+  background-color: #1f2937; /* gray-800 */
+  font-weight: 600;
+}
+
+.menu-details-view td {
+  background-color: #374151; /* gray-700 */
+}
+
+.menu-details-view p {
+  margin-bottom: 0.75rem;
+}
+
+.menu-details-view strong {
+  color: #93c5fd; /* blue-300 */
+}
+
+.menu-details-view em {
+  font-style: italic;
+  color: #a5b4fc; /* indigo-300 */
 }

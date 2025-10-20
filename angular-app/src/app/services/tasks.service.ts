@@ -25,6 +25,11 @@ export class TasksService {
     return this.http.post(this.apiUrl, taskData);
   }
 
+  // Actualiza una tarea existente
+  updateTask(taskId: number, taskData: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${taskId}`, taskData);
+  }
+
   // Elimina una tarea
   deleteTask(taskId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${taskId}`);
@@ -36,7 +41,7 @@ export class TasksService {
   }
 
   // Asigna un producto elegido a un requerimiento de la pauta
-  setChosenProduct(taskProductId: number, chosenProductId: number): Observable<any> {
+  setChosenProduct(taskProductId: number, chosenProductId: number | null): Observable<any> {
     return this.http.patch(`${this.apiUrl}/product/${taskProductId}/choose`, { chosenProductId });
   }
 

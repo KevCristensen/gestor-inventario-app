@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TasksService } from '../../services/tasks.service';
 import { AuthService } from '../../services/auth.service';
 import { forkJoin } from 'rxjs';
@@ -20,6 +20,7 @@ export class TaskDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     public tasksService: TasksService,
     private authService: AuthService,
     private entitiesService: EntitiesService,
@@ -37,7 +38,7 @@ export class TaskDetailComponent implements OnInit {
       forkJoin([entityRequest, taskRequest]).subscribe({
         next: ([entity, taskData]) => {
           this.entityName = entity.name;
-          this.task = taskData;
+          this.task = this.processTaskMenuDetails(taskData); // Procesamos el menú
           this.isLoading = false;
           this.cdr.detectChanges(); // Actualizamos la vista una vez que tenemos todos los datos.
         },
@@ -49,6 +50,53 @@ export class TaskDetailComponent implements OnInit {
     } else {
       this.isLoading = false;
       // Aquí podrías redirigir o mostrar un error
+    }
+  }
+
+  // Convierte el JSON del menú a HTML para mostrarlo
+  private processTaskMenuDetails(task: any): any {
+    if (!task.menu_details) {
+      return task;
+    }
+
+    try {
+      const menuSections = JSON.parse(task.menu_details);
+      let menuDetailsHtml = '';
+
+      for (const section of menuSections) {
+        menuDetailsHtml += `<h3>${section.title || ''}</h3>`;
+        for (const item of section.items) {
+          if (item.type === 'table' || item.type === 'postre' || item.type === 'salad') {
+            if (item.rationsTitle) menuDetailsHtml += `<h4>${item.rationsTitle}</h4>`;
+            menuDetailsHtml += `<p><strong>${item.title}</strong></p>`;
+          }
+
+          if (item.type === 'table') {
+            menuDetailsHtml += '<table><thead><tr><th>PRODUCTO</th><th>GRAMAJE</th><th>CANTIDAD</th><th>TOTAL</th></tr></thead><tbody>';
+            for (const ing of item.ingredients) menuDetailsHtml += `<tr${ing.isHighlighted ? ' class="highlighted-row"' : ''}><td>${ing.product || ''}</td><td>${ing.gramaje || ''}</td><td>${ing.cantidad || ''}</td><td>${ing.total || ''}</td></tr>`;
+            menuDetailsHtml += '</tbody></table>';
+          } else if (item.type === 'postre') {
+            menuDetailsHtml += '<table><thead><tr><th>PRODUCTO</th><th>GRAMAJE</th></tr></thead><tbody>';
+            for (const ing of item.ingredients) menuDetailsHtml += `<tr${ing.isHighlighted ? ' class="highlighted-row"' : ''}><td>${ing.product || ''}</td><td>${ing.gramaje || ''}</td></tr>`;
+            menuDetailsHtml += '</tbody></table>';
+          } else if (item.type === 'salad') {
+            menuDetailsHtml += '<table><thead><tr><th>PRODUCTO</th><th>FUENTES</th></tr></thead><tbody>';
+            for (const ing of item.ingredients) menuDetailsHtml += `<tr${ing.isHighlighted ? ' class="highlighted-row"' : ''}><td>${ing.product || ''}</td><td>${ing.fuentes || ''}</td></tr>`;
+            menuDetailsHtml += '</tbody></table>';
+          } else { // type 'text'
+            menuDetailsHtml += `<p><strong>${item.title}</strong><br>${item.description}</p>`;
+          }
+
+          if (item.notes && item.notes.length > 0) {
+            item.notes.forEach((note: string) => { if (note) menuDetailsHtml += `<p><em>${note}</em></p>`; });
+          }
+        }
+      }
+      // Sobreescribimos la propiedad con el HTML generado
+      return { ...task, menu_details: menuDetailsHtml };
+    } catch (e) {
+      console.error('El detalle del menú no es un JSON válido, se mostrará como texto.', e);
+      return task; // Devuelve la tarea original si falla el parseo
     }
   }
 
@@ -87,12 +135,17 @@ export class TaskDetailComponent implements OnInit {
     return Math.ceil(requiredAmountInBase / productAmountInBase);
   }
 
-  selectProductForRequirement(taskProductId: number, chosenProductId: number): void {
+  selectProductForRequirement(taskProductId: number, chosenProductId: number | null): void {
     this.tasksService.setChosenProduct(taskProductId, chosenProductId).subscribe(() => {
       // Recargamos los datos para reflejar la selección
       this.isLoading = true;
       this.ngOnInit();
     });
+  }
+
+  editTask(): void {
+    // Navegamos a la página de pautas y pasamos el ID de la tarea a editar como un parámetro en la URL.
+    this.router.navigate(['/dashboard/tasks'], { queryParams: { editTaskId: this.task.id } });
   }
 
   printTask(): void {
