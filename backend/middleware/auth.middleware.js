@@ -1,31 +1,42 @@
 const jwt = require('jsonwebtoken');
+const ROLES = require('../config/roles.config');
 
-function isAdmin(req, res, next) {
-    // 1. Obtener el token del header
+function checkRole(req, res, next) {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Formato "Bearer TOKEN"
+    const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-        return res.sendStatus(401); // No autorizado (no hay token)
+        return res.status(401).json({ error: 'No se proporcionó token de autenticación.' });
     }
 
-    // 2. Verificar el token
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) {
-            return res.sendStatus(403); // Prohibido (token inválido)
+            return res.status(403).json({ error: 'Token inválido o expirado.' });
         }
-        
-        // 3. Verificar si el rol es 'admin'
 
-        // --- AÑADE ESTA LÍNEA PARA DEPURAR ---
-        // console.log('Token decodificado - Rol del usuario:', user.role);
-        // if (user.role !== 'admin') {
-        //     return res.status(403).json({ error: 'Acceso denegado. Se requiere rol de administrador.' });
-        // }
+        const userRole = user.role;
+        const allowedRoutes = ROLES[userRole];
+
+        if (!allowedRoutes) {
+            return res.status(403).json({ error: 'Rol de usuario no reconocido.' });
+        }
+
+        // El admin tiene acceso a todo
+        if (userRole === 'admin' && allowedRoutes[0] === '/') {
+            req.user = user;
+            return next();
+        }
+
+        // Verificar si la ruta solicitada está permitida para el rol del usuario
+        const isAllowed = allowedRoutes.some(routePrefix => req.originalUrl.startsWith(routePrefix));
+
+        if (!isAllowed) {
+            return res.status(403).json({ error: 'Acceso denegado. No tienes permiso para acceder a este recurso.' });
+        }
 
         req.user = user; // Guardamos el usuario en el request para uso futuro
-        next(); // Si todo está bien, continuamos a la siguiente función (la ruta)
+        next();
     });
 }
 
-module.exports = { isAdmin };
+module.exports = { checkRole };

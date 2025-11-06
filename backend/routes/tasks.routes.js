@@ -1,27 +1,26 @@
 const express = require('express');
 const router = express.Router();
-const taskController = require('../controllers/tasks.controller');
-const { isAdmin } = require('../middleware/auth.middleware');
+const tasksController = require('../controllers/tasks.controller');
 
-// Obtener todas las tareas de una entidad
-router.get('/', taskController.getAllTasks);
+// Ruta para obtener todas las pautas (con filtros)
+router.get('/', tasksController.getTasks);
 
-// Obtener una tarea específica por ID
-router.get('/:id', taskController.getTaskById);
+// Ruta para obtener una pauta por ID
+router.get('/:id', tasksController.getTaskById);
 
-// Crear una nueva tarea (solo para administradores)
-router.post('/', isAdmin, taskController.createTask);
+// Ruta para crear una nueva pauta
+router.post('/', tasksController.createTask);
 
-// Actualizar una tarea existente
-router.put('/:id', isAdmin, taskController.updateTask);
+// Ruta para actualizar una pauta
+router.put('/:id', tasksController.updateTask);
 
-// Eliminar una tarea
-router.delete('/:id', isAdmin, taskController.deleteTask);
+// Ruta para eliminar una pauta
+router.delete('/:id', tasksController.deleteTask);
 
-// Actualizar el estado de una tarea
-router.patch('/:id/status', taskController.updateTaskStatus);
+// Ruta para actualizar el estado y/o las observaciones de una pauta
+router.patch('/:id', tasksController.updateTaskStatus);
 
-// Asignar un producto específico a un requerimiento de la pauta
-router.patch('/product/:taskProductId/choose', taskController.setChosenProduct);
+// Ruta para asignar un producto a un requerimiento de una pauta
+router.post('/:id/assign-product', tasksController.assignProductToRequirement);
 
 module.exports = router;

@@ -6,6 +6,7 @@ import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 import { ChatService } from '../../services/chat.service'; // Reutilizamos para obtener usuarios
 import { ProductsService } from '../../services/products.service';
+import { DishesService, Dish } from '../../services/dishes.service';
 import { finalize } from 'rxjs';
 import { NotificationService } from '../../services/notification.service';
 
@@ -18,11 +19,15 @@ import { NotificationService } from '../../services/notification.service';
 export class TasksComponent implements OnInit {
   tasks: any[] = [];
   isLoading = false;
+  isSaving = false; // <-- NUEVA PROPIEDAD PARA BLOQUEAR EL BOTÓN
   
   // Filtros de fecha
   selectedMonth: string;
   currentYear = new Date().getFullYear();
   editingTaskId: number | null = null;
+
+  // Estado para el nuevo modal por pasos
+  currentModalStep = 1;
 
   isModalOpen = false;
 
@@ -35,10 +40,20 @@ export class TasksComponent implements OnInit {
     assignedUsers: [],
     requiredProducts: []
   };
+ 
+  // Estado para el nuevo buscador de platillos
+  dishSearchTerms: { [sectionIndex: number]: string } = {};
+  get filteredDishes() {
+    return (sectionIndex: number) => {
+      const term = this.dishSearchTerms[sectionIndex]?.toLowerCase();
+      return term ? this.allDishes.filter(d => d.name.toLowerCase().includes(term)) : [];
+    }
+  }
   
   // Listas para los selectores del formulario
   allUsers: any[] = [];
   allProducts: any[] = [];
+  allDishes: Dish[] = [];
 
   // Para añadir productos a la tarea
   productSearchTerm: string = '';
@@ -52,6 +67,7 @@ export class TasksComponent implements OnInit {
     private authService: AuthService,
     private chatService: ChatService,
     private productsService: ProductsService,
+    private dishesService: DishesService,
     private notificationService: NotificationService,
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
@@ -115,6 +131,10 @@ export class TasksComponent implements OnInit {
     this.productsService.getAllProducts().subscribe(products => {
       this.allProducts = products;
     });
+    // Cargamos todos los platillos disponibles
+    this.dishesService.getAllDishes().subscribe(dishes => {
+      this.allDishes = dishes;
+    });
   }
 
   onDateFilterChange(): void { this.loadTasks(); }
@@ -124,6 +144,7 @@ export class TasksComponent implements OnInit {
     // Al abrir el modal, establecemos la fecha de hoy como valor por defecto.
     const today = new Date().toISOString().split('T')[0];
     this.newTask.due_date = today;
+    this.currentModalStep = 1; // Siempre empezar en el primer paso
     this.isModalOpen = true;
   }
 
@@ -151,28 +172,38 @@ export class TasksComponent implements OnInit {
         // para no perderlo al volver a guardar la pauta.
         console.warn('El detalle del menú no es un JSON válido (HTML antiguo). Se mostrará como texto para resguardarlo.');
         menuSections = [{
-          title: 'Detalles (Formato Antiguo)',
+          title: 'Detalles (Formato Antiguo) - Por favor, migrar a nuevo formato.',
           items: [{
-            type: 'text', title: 'Contenido Original', description: 'Por favor, reconstruya este menú con el nuevo formato. El contenido original se ha perdido en la conversión.'
-          }]
+            type: 'legacy',
+            // Guardamos el HTML antiguo en un campo para mostrarlo,
+            // pero no se podrá editar directamente. Al guardar, este
+            // contenido se perderá si no se reconstruye el menú con
+            // el nuevo sistema.
+            legacy_content: taskToEdit.menu_details 
+          }
+        ]
         }];
       }
 
       this.newTask = {
         title: taskToEdit.title,
         description: taskToEdit.description,
-        due_date: new Date(taskToEdit.due_date).toISOString().split('T')[0],
-        menuSections: menuSections, // Cargamos los detalles del menú parseados
-        assignedUsers: taskToEdit.assignedUsers.map((u: any) => u.id),
-        requiredProducts: taskToEdit.requiredProducts.map((p: any) => ({
-          product_id: p.product_id,
-          name: p.name,
-          required_quantity: p.required_quantity,
-          // El backend ahora usa `required_unit`, el formulario usa `unit`. Unificamos.
-          unit: p.required_unit
-        }))
+        due_date: new Date(taskToEdit.due_date).toISOString().split('T')[0], // Formato YYYY-MM-DD
+        menuSections: menuSections,
+        // El backend ahora devuelve un array de objetos. Extraemos solo los IDs.
+        assignedUsers: (taskToEdit.assigned_users || []).map((u: any) => u.id),
+        // El backend devuelve `required_products` como un objeto enriquecido, lo procesamos.
+        requiredProducts: (taskToEdit.required_products || []).map((p: any) => ({
+            product_id: p.product_id,
+            name: p.name,
+            required_quantity: p.required_quantity,
+            // El backend ahora usa `required_unit`, el formulario usa `unit`. Unificamos.
+            unit: p.required_unit || p.unit
+          })
+        )
       };
       this.editingTaskId = taskId;
+      this.currentModalStep = 1; // Empezar en el primer paso al editar
       this.isModalOpen = true;
       // Forzamos la detección de cambios para que la vista se actualice y muestre el modal.
       this.cdr.detectChanges();
@@ -245,6 +276,9 @@ export class TasksComponent implements OnInit {
   }
 
   createTask(): void {
+    if (this.isSaving) return; // Evita ejecuciones múltiples si ya se está guardando
+    this.isSaving = true;
+
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) return;
 
@@ -253,7 +287,15 @@ export class TasksComponent implements OnInit {
     const cleanedMenuSections = this.newTask.menuSections
       .map((section: any) => ({
         ...section,
-        items: section.items.filter((item: any) => item.title || (item.ingredients && item.ingredients.length > 0))
+        items: section.items.filter((item: any) => 
+          item.type === 'legacy' || // Conservar contenido antiguo si aún no se ha migrado
+          item.type === 'other' && (item.title || item.description) || // Conservar items de texto
+          // Lógica corregida: un platillo es válido si tiene un ID, ya no usamos la cantidad general.
+          item.dish_id ||
+          // Lógica para los nuevos formatos de postre y ensalada
+          (item.type === 'postre' && item.ingredients?.some((i: any) => i.product)) ||
+          (item.type === 'salad' && item.ingredients?.some((i: any) => i.product))
+        )
       }))
       .filter((section: any) => section.title || section.items.length > 0);
 
@@ -272,16 +314,26 @@ export class TasksComponent implements OnInit {
       ? this.tasksService.updateTask(this.editingTaskId, payload)
       : this.tasksService.createTask(payload);
 
-    operation.subscribe({
-      next: () => {
-        this.notificationService.showSuccess(`Pauta ${this.editingTaskId ? 'actualizada' : 'creada'} exitosamente.`);
-        this.closeModal();
-        // Usamos setTimeout para asegurar que la recarga ocurra en un nuevo ciclo de detección de cambios,
-        // evitando el error ExpressionChangedAfterItHasBeenCheckedError.
-        setTimeout(() => this.loadTasks(), 0);
-      },
-      error: (err) => this.notificationService.showError(err.error?.error || `Error al ${this.editingTaskId ? 'actualizar' : 'crear'} la pauta.`)
-    });
+    operation
+      .pipe(
+        finalize(() => {
+          this.isSaving = false;
+          this.cdr.detectChanges(); // Forzamos la detección de cambios aquí
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess(`Pauta ${this.editingTaskId ? 'actualizada' : 'creada'} exitosamente.`);          
+          // Movemos el cierre del modal y la recarga de tareas a un setTimeout
+          // para asegurar que ocurran en el siguiente ciclo de detección de cambios,
+          // evitando el error ExpressionChangedAfterItHasBeenCheckedError.
+          setTimeout(() => {
+            this.closeModal();
+            this.loadTasks();
+          }, 0);
+        },
+        error: (err) => this.notificationService.showError(err.error?.error || `Error al ${this.editingTaskId ? 'actualizar' : 'crear'} la pauta.`)
+      });
   }
 
   resetNewTaskForm(): void {
@@ -323,36 +375,127 @@ export class TasksComponent implements OnInit {
     this.newTask.menuSections.splice(sectionIndex, 1);
   }
 
-  addMenuItem(sectionIndex: number, type: 'table' | 'text' | 'postre' | 'salad') {
-    if (type === 'table') {
-      this.newTask.menuSections[sectionIndex].items.push({ rationsTitle: '', title: 'Nuevo Plato', type: 'table', ingredients: [{ product: '', gramaje: '', cantidad: '', total: '', isHighlighted: false }], notes: [''] });
-    } else if (type === 'postre') {
-      this.newTask.menuSections[sectionIndex].items.push({ rationsTitle: '', title: 'Nuevo Postre', type: 'postre', ingredients: [{ product: '', gramaje: '', isHighlighted: false }], notes: [] });
-    } else if (type === 'salad') {
-      this.newTask.menuSections[sectionIndex].items.push({ rationsTitle: '', title: 'Nuevo Salad Bar', type: 'salad', ingredients: [{ product: '', fuentes: '', isHighlighted: false }], notes: [] });
-    } else {
-      this.newTask.menuSections[sectionIndex].items.push({ title: 'Nuevo Ítem', type: 'text', description: '' });
-    }
+  // Lógica para el nuevo constructor de menús
+  addDishToSection(dish: Dish, sectionIndex: number): void {
+    const newMenuItem = {
+      dish_id: dish.id,
+      name: dish.name,
+      type: dish.type,
+      ingredients: dish.ingredients.map(ing => ({
+        product_name: ing.product_name,
+        grammage: ing.grammage, // Gramaje por ración
+        cantidad: 1, // Cantidad por defecto para cada ingrediente
+        total: ing.grammage // Total inicial para cantidad 1
+      }))
+    };
+    this.newTask.menuSections[sectionIndex].items.push(newMenuItem);
+    this.dishSearchTerms[sectionIndex] = ''; // Limpiar búsqueda
+    this.syncRequiredProducts(); // Sincronizar productos para bodega
   }
 
   removeMenuItem(sectionIndex: number, itemIndex: number) {
     this.newTask.menuSections[sectionIndex].items.splice(itemIndex, 1);
+    this.syncRequiredProducts(); // Sincronizar productos para bodega
   }
 
-  addIngredient(sectionIndex: number, itemIndex: number) {
-    const itemType = this.newTask.menuSections[sectionIndex].items[itemIndex].type;
-    let newIngredient: any = { isHighlighted: false };
-    if (itemType === 'table') newIngredient = { ...newIngredient, product: '', gramaje: '', cantidad: '', total: '' };
-    else if (itemType === 'postre') newIngredient = { ...newIngredient, product: '', gramaje: '' };
-    else if (itemType === 'salad') newIngredient = { ...newIngredient, product: '', fuentes: '' };
-    
-    this.newTask.menuSections[sectionIndex].items[itemIndex].ingredients.push(newIngredient);
+  updateIngredientTotal(sectionIndex: number, itemIndex: number, ingredientIndex: number): void {
+    const ingredient = this.newTask.menuSections[sectionIndex].items[itemIndex].ingredients[ingredientIndex];
+    // Aseguramos que la cantidad no sea negativa
+    if (ingredient.cantidad < 0) {
+      ingredient.cantidad = 0;
+    }
+    const quantity = ingredient.cantidad || 0;
+    const grammage = ingredient.grammage || 0;
+    ingredient.total = grammage * quantity;
+    this.syncRequiredProducts(); // Sincronizar productos para bodega
   }
 
-  removeIngredient(sectionIndex: number, itemIndex: number, ingredientIndex: number) {
+  /**
+   * Sincroniza la lista de "Productos Requeridos (para Bodega)"
+   * basándose en los platillos y raciones del menú de cocina.
+   */
+  syncRequiredProducts(): void {
+    const kitchenProducts = new Map<string, { totalGrams: number, productId: number | null, unit: string }>();
+
+    // 1. Recolectar y sumar todos los ingredientes de los platillos del menú
+    for (const section of this.newTask.menuSections) {
+      for (const item of section.items) {
+        if (item.ingredients && item.type !== 'legacy' && item.type !== 'other') {          
+          for (const ingredient of item.ingredients) {            
+            // --- LÓGICA CORREGIDA ---
+            // Unificamos la obtención del nombre del producto, ya sea de 'product_name' o 'product'.
+            const productNameRaw = ingredient.product_name || ingredient.product;
+            if (!productNameRaw) continue; // Si no hay nombre, saltamos al siguiente.
+
+            const productName = productNameRaw.toLowerCase();
+            const current = kitchenProducts.get(productName) || { totalGrams: 0, productId: null, unit: 'g' };
+
+            // Sumamos los gramos. Para platillos del recetario, es gramaje * cantidad.
+            // Para postres, es solo el gramaje. Para salad bar, no se suma (no tiene gramaje).
+            if (item.type === 'postre') {
+              current.totalGrams += Number(ingredient.gramaje) || 0;
+            } else { // Para 'normal' y otros tipos que puedan tenerlo
+              current.totalGrams += (ingredient.grammage || 0) * (ingredient.cantidad || 0);
+            }
+
+            // Intentamos encontrar el ID y la unidad del producto para una mejor vinculación
+            if (current.productId === null) {
+              const product = this.allProducts.find(p => p.name.toLowerCase() === productName);
+              if (product) {
+                current.productId = product.id;
+                current.unit = product.unit_of_measure === 'un' ? 'un' : 'g'; // Asumimos 'g' si no es 'un'
+              }
+            }
+            kitchenProducts.set(productName, current);
+          }
+        }
+      }
+    }
+
+    // 2. Reconstruir la lista de productos requeridos
+    this.newTask.requiredProducts = Array.from(kitchenProducts.entries()).map(([name, data]) => ({
+      product_id: data.productId,
+      name: name.charAt(0).toUpperCase() + name.slice(1), // Capitalizar nombre
+      required_quantity: data.totalGrams,
+      unit: data.unit // Usamos la unidad encontrada o 'g' por defecto
+    }));
+  }
+
+  addSaladBar(sectionIndex: number): void {
+    this.newTask.menuSections[sectionIndex].items.push({
+      type: 'salad',
+      title: 'Salad Bar',
+      ingredients: [{ product: '', fuentes: '' }]
+    });
+  }
+
+  addDessert(sectionIndex: number): void {
+    this.newTask.menuSections[sectionIndex].items.push({
+      type: 'postre',
+      title: 'Postre',
+      ingredients: [{ product: '', gramaje: '' }]
+    });
+  }
+
+  addTableIngredient(sectionIndex: number, itemIndex: number): void {
+    this.newTask.menuSections[sectionIndex].items[itemIndex].ingredients.push({});
+  }
+
+  removeTableIngredient(sectionIndex: number, itemIndex: number, ingredientIndex: number): void {
     this.newTask.menuSections[sectionIndex].items[itemIndex].ingredients.splice(ingredientIndex, 1);
   }
 
+  // Agregamos un nuevo tipo de sección para otros ítems (postres, ensaladas, etc.)
+  addOtherItem(sectionIndex: number) {
+    this.newTask.menuSections[sectionIndex].items.push({
+      type: 'other', // Un tipo simple para texto
+      title: 'Nuevo Ítem',
+      description: ''
+    });
+  }
+
+  // El método addNote ya no es necesario con el nuevo sistema de "addOtherItem"
+  /*
   addNote(sectionIndex: number, itemIndex: number) {
     if (!this.newTask.menuSections[sectionIndex].items[itemIndex].notes) {
       this.newTask.menuSections[sectionIndex].items[itemIndex].notes = [];
@@ -363,6 +506,7 @@ export class TasksComponent implements OnInit {
   removeNote(sectionIndex: number, itemIndex: number, noteIndex: number) {
     this.newTask.menuSections[sectionIndex].items[itemIndex].notes.splice(noteIndex, 1);
   }
+  */
 
   // --- Funciones TrackBy para optimizar el rendimiento de los bucles @for ---
   trackBySection(index: number, section: any): number {
@@ -379,5 +523,14 @@ export class TasksComponent implements OnInit {
 
   trackByNote(index: number, note: any): number {
     return index;
+  }
+
+  // --- Métodos para el Stepper del Modal ---
+  nextStep() {
+    this.currentModalStep++;
+  }
+
+  prevStep() {
+    this.currentModalStep--;
   }
 }

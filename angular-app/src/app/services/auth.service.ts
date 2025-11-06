@@ -1,14 +1,15 @@
-import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common'; // Importa esta función
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, BehaviorSubject } from 'rxjs';
+import { Router } from '@angular/router';
 
 // Definimos y exportamos la interfaz User
 export interface User {
   id: number;
   name: string;
-  email: string;
-  role: 'admin' | 'user';
+  email: string;  
+  role: 'admin' | 'nutricionista' | 'bodega' | 'losa';
+  status: 'en linea' | 'ausente' | 'ocupado';
   entity_id: number;
 }
 
@@ -17,14 +18,16 @@ export interface User {
 })
 export class AuthService {
   private apiUrl = 'http://localhost:3000/api/auth';
-  private readonly TOKEN_KEY = 'auth_token';
-  private isBrowser: boolean;
-
+  private currentUserSubject: BehaviorSubject<User | null>;
+  public currentUser: Observable<User | null>;
+  
   constructor(
     private http: HttpClient,
-    @Inject(PLATFORM_ID) private platformId: Object // Inyecta el PLATFORM_ID
+    private router: Router
   ) {
-    this.isBrowser = isPlatformBrowser(this.platformId); // Comprueba una sola vez si es navegador
+    const user = this.getCurrentUserFromStorage();
+    this.currentUserSubject = new BehaviorSubject<User | null>(user);
+    this.currentUser = this.currentUserSubject.asObservable();
   }
 
   login(credentials: {email: string, password: string}): Observable<any> {
@@ -33,47 +36,85 @@ export class AuthService {
     );
   }
 
-  private readonly USER_KEY = 'auth_user';
+  updateStatus(status: 'en linea' | 'ausente' | 'ocupado'): Observable<any> {
+    const userId = this.currentUserValue?.id;
+    return this.http.put(`${this.apiUrl}/status`, { userId, status }).pipe(
+      tap(() => this.updateLocalUserStatus(status))
+    );
+  }
+
+  private updateLocalUserStatus(status: 'en linea' | 'ausente' | 'ocupado'): void {
+    const currentUser = this.currentUserValue;
+    if (currentUser) {
+      this.currentUserSubject.next({ ...currentUser, status });
+    }
+  }
 
   private setSession(authResult: any) {
-    if (this.isBrowser) {
-      sessionStorage.setItem(this.TOKEN_KEY, authResult.token);
-      sessionStorage.setItem(this.USER_KEY, JSON.stringify(authResult.user)); // Guarda el usuario
-    }
+    sessionStorage.setItem('auth_token', authResult.token);
+    sessionStorage.setItem('auth_user', JSON.stringify(authResult.user));
+    this.currentUserSubject.next(authResult.user);
   }
 
   logout() {
-    if (this.isBrowser) {
-      sessionStorage.removeItem(this.TOKEN_KEY);
-      sessionStorage.removeItem(this.USER_KEY); // Borra el usuario
-    }
+    sessionStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_user');
+    this.currentUserSubject.next(null);
+    this.router.navigate(['/login']);
   }
 
-  // Nuevo método para obtener los datos del usuario logueado
+  public get currentUserValue(): User | null {
+    return this.currentUserSubject.value;
+  }
+
+  // --- MÉTODOS ANTIGUOS RESTAURADOS PARA COMPATIBILIDAD ---
   getCurrentUser(): User | null {
-    if (this.isBrowser) {
-      const user = sessionStorage.getItem(this.USER_KEY);
-      return user ? JSON.parse(user) : null;
-    }
-    return null;
+    return this.currentUserValue;
   }
 
   getUserRole(): string | null {
-    const user = this.getCurrentUser();
+    const user = this.currentUserValue;
     return user ? user.role : null;
+  }
+  // ---------------------------------------------------------
+
+  private getCurrentUserFromStorage(): User | null {
+    const user = sessionStorage.getItem('auth_user');
+    return user ? JSON.parse(user) : null;
   }
 
   getToken(): string | null {
-    if (this.isBrowser) {
-      return sessionStorage.getItem(this.TOKEN_KEY);
-    }
-    return null;
+    return sessionStorage.getItem('auth_token');
   }
 
   isLoggedIn(): boolean {
-    if (this.isBrowser) { // <-- Añade la comprobación
-      return !!sessionStorage.getItem(this.TOKEN_KEY);
+    return !!this.getToken();
+  }
+
+  isAdmin(): boolean {
+    const user = this.currentUserValue;
+    return !!user && user.role === 'admin';
+  }
+
+  hasRole(allowedRoles: string | string[]): boolean {
+    const user = this.currentUserValue;
+    if (!user || !user.role) {
+      return false;
     }
-    return false; // En el servidor, nunca se está logueado
+    const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+    return roles.includes(user.role);
+  }
+
+  getHomePageForRole(role: string): string {
+    switch (role) {
+      case 'admin':
+      case 'nutricionista':
+      case 'bodega':
+        return '/dashboard'; // Estos roles sí pueden ver el dashboard.
+      case 'losa':
+        return '/dashboard/assets'; // El rol de losa va directo a Activos Fijos.
+      default:
+        return '/dashboard'; // Un fallback seguro.
+    }
   }
 }

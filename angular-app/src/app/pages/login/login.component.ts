@@ -36,8 +36,11 @@ export class LoginComponent {
       next: (response) => {
         console.log('Login exitoso!', response);
         this.notificationService.showSuccess('Login exitoso!');
-        // 3. Navega al dashboard
-        this.router.navigate(['/dashboard']);
+        // 3. 
+        // Redirección inteligente basada en el rol del usuario
+        const userRole = response.user.role;
+        const homePage = this.authService.getHomePageForRole(userRole);
+        this.router.navigate([homePage]);
       },
       error: (err) => {
         // Si hay un error (ej. credenciales inválidas)

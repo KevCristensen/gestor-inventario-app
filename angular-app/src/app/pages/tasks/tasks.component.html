@@ -1,14 +1,14 @@
-<div class="text-white">
+<!-- Contenedor principal con animación de entrada -->
+<div class="text-white" style="animation: fade-in-up 0.7s ease-out forwards;">
   <!-- Encabezado y Filtros -->
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-3xl font-bold">Pautas de Preparación</h1>
     <div class="flex items-center gap-4">
       <div>
         <label for="month-filter" class="text-sm text-gray-400">Filtrar por Mes:</label>
-        <input type="month" id="month-filter" [(ngModel)]="selectedMonth" (change)="onDateFilterChange()"
-               class="bg-gray-700 p-2 rounded-lg border border-gray-600 text-gray-200 ml-2" [style.color-scheme]="'dark'">
+        <input type="month" id="month-filter" [(ngModel)]="selectedMonth" (change)="onDateFilterChange()" class="bg-gray-700 p-2 rounded-lg border border-gray-600 text-gray-200 ml-2" [style.color-scheme]="'dark'">
       </div>
-      <button (click)="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+      <button (click)="openModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg transition-all transform hover:scale-105">
         + Crear Pauta
       </button>
     </div>
@@ -16,12 +16,14 @@
 
   <!-- Lista de Pautas -->
   @if (isLoading) {
-    <div class="text-center p-8 text-gray-500">Cargando pautas...</div>
+    <div class="bg-gray-800/50 rounded-xl shadow p-8 text-center text-gray-500 border border-dashed border-gray-700">Cargando pautas...</div>
   } @else if (tasks.length > 0) {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      @for (task of tasks; track task.id) {
-        <a [routerLink]="['/dashboard/tasks', task.id]" class="bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col hover:bg-gray-700 transition-colors relative group">
-          <button (click)="deleteTask(task.id, $event)" class="absolute top-3 right-3 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+      @for (task of tasks; track task.id; let i = $index) {
+        <a [routerLink]="['/dashboard/tasks', task.id]" 
+           class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-xl shadow-lg border border-gray-700/50 flex flex-col relative group transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 opacity-0"
+           style="animation: card-enter 0.5s ease-out forwards; animation-delay: {{ i * 80 }}ms;">
+          <button (click)="deleteTask(task.id, $event)" class="absolute top-3 right-3 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all duration-300 transform hover:scale-110">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
           </button>
           <div class="flex-grow">
@@ -46,7 +48,7 @@
       }
     </div>
   } @else {
-    <div class="bg-gray-800 rounded-lg shadow p-8 text-center text-gray-500">
+    <div class="bg-gray-800/50 rounded-xl shadow p-8 text-center text-gray-500 border border-dashed border-gray-700">
       No hay pautas creadas para el mes seleccionado.
     </div>
   }
@@ -54,212 +56,200 @@
 
 <!-- Modal para Crear Nueva Tarea -->
 @if (isModalOpen) {
-  <div class="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50">
-    <div class="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-4xl text-white transform transition-all duration-300 max-h-[90vh] flex flex-col">
-      <h2 class="text-2xl font-bold mb-6">Nueva Pauta</h2>
-      
-      <form id="taskFormElement" #taskForm="ngForm" (ngSubmit)="createTask()" class="flex-grow overflow-y-auto pr-4">
-        <div class="space-y-6">
-          <div>
-            <label for="title" class="block text-sm font-medium text-gray-300 mb-1">Título de la Pauta</label>
-            <input type="text" id="title" [(ngModel)]="newTask.title" name="title" required class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+  <div class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex justify-center items-center z-50" style="animation: fade-in 0.3s ease-out forwards;">
+    <div class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 p-8 w-full max-w-4xl text-white transform transition-all duration-300 max-h-[90vh] flex flex-col" style="animation: fade-in-up 0.5s ease-out forwards;">
+      <h2 class="text-2xl font-bold mb-2">{{ editingTaskId ? 'Editar' : 'Crear' }} Pauta</h2>
+      <!-- Indicador de Pasos -->
+      <div class="flex items-center justify-center space-x-4 mb-6">
+        @for (step of [1, 2, 3, 4]; track step) {
+          <div class="flex items-center" [ngClass]="{'text-blue-400': currentModalStep >= step, 'text-gray-500': currentModalStep < step}">
+            <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold transition-all" [ngClass]="{'bg-blue-500/20 border-blue-500': currentModalStep >= step, 'border-gray-600': currentModalStep < step}">
+              {{ step }}
+            </div>
+            @if (step < 4) {
+              <div class="w-12 h-0.5" [ngClass]="{'bg-blue-500': currentModalStep > step, 'bg-gray-600': currentModalStep <= step}"></div>
+            }
           </div>
-          
-          <div class="grid grid-cols-2 gap-6">
+        }
+      </div>
+      
+      <form id="taskFormElement" #taskForm="ngForm" (ngSubmit)="createTask()" class="flex-grow overflow-y-auto pr-4 -mr-4">
+        <!-- Paso 1: Información General -->
+        @if (currentModalStep === 1) {
+          <div class="space-y-6" style="animation: fade-in 0.5s ease-out forwards;">
+            <div>
+              <label for="title" class="block text-sm font-medium text-gray-300 mb-1">Título de la Pauta</label>
+              <input type="text" id="title" [(ngModel)]="newTask.title" name="title" required class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+            </div>
             <div>
               <label for="due_date" class="block text-sm font-medium text-gray-300 mb-1">Fecha de Entrega</label>
               <input type="date" id="due_date" [(ngModel)]="newTask.due_date" name="due_date" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600" [style.color-scheme]="'dark'">
             </div>
             <div>
-              <label for="assignedUsers" class="block text-sm font-medium text-gray-300 mb-1">Asignar a</label>
-              <div class="bg-gray-700 p-2.5 rounded-lg border border-gray-600 h-24 overflow-y-auto">
-                @for(user of allUsers; track user.id) {
-                  <label class="flex items-center space-x-2 p-1 hover:bg-gray-600 rounded-md cursor-pointer">
-                    <input type="checkbox" [value]="user.id" (change)="toggleUserAssignment(user.id)" class="form-checkbox bg-gray-600 border-gray-500 text-blue-500 focus:ring-blue-500">
-                    <span>{{ user.name }}</span>
-                  </label>
-                }
-              </div>
+              <label for="description" class="block text-sm font-medium text-gray-300 mb-1">Descripción / Instrucciones Generales</label>
+              <textarea id="description" [(ngModel)]="newTask.description" name="description" rows="4" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600"></textarea>
             </div>
           </div>
+        }
 
-          <div>
-            <label for="description" class="block text-sm font-medium text-gray-300 mb-1">Descripción / Instrucciones Generales</label>
-            <textarea id="description" [(ngModel)]="newTask.description" name="description" rows="2" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600"></textarea>
+        <!-- Paso 2: Asignar Personal -->
+        @if (currentModalStep === 2) {
+          <div style="animation: fade-in 0.5s ease-out forwards;">
+            <label for="assignedUsers" class="block text-sm font-medium text-gray-300 mb-2">Asignar a</label>
+            <div class="bg-gray-900/50 p-3 rounded-lg border border-gray-700 h-72 overflow-y-auto grid grid-cols-2 gap-2">
+              @for(user of allUsers; track user.id) {
+                <label class="flex items-center space-x-3 p-2 hover:bg-gray-700 rounded-md cursor-pointer">
+                  <input type="checkbox" [value]="user.id" [checked]="newTask.assignedUsers.includes(user.id)" (change)="toggleUserAssignment(user.id)" class="form-checkbox bg-gray-600 border-gray-500 text-blue-500 focus:ring-blue-500 h-5 w-5">
+                  <span>{{ user.name }}</span>
+                </label>
+              }
+            </div>
           </div>
+        }
 
-          <!-- Constructor de Menús y Raciones -->
-          <div class="border-t border-gray-700 pt-4">
+        <!-- Paso 3: Constructor de Menús -->
+        @if (currentModalStep === 3) {
+          <div class="space-y-6" style="animation: fade-in 0.5s ease-out forwards;">
             <div class="flex justify-between items-center mb-3">
               <h3 class="text-lg font-semibold">Detalle de Menús (para Cocina)</h3>
               <button type="button" (click)="addMenuSection()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1 px-3 rounded-lg">+ Añadir Sección de Menú</button>
             </div>
             
             <div class="space-y-4">
-              @for(section of newTask.menuSections; track section; let sectionIndex = $index) {
+              @for(section of newTask.menuSections; track $index; let sectionIndex = $index) {
                 <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
                   <div class="flex justify-between items-center mb-3">
-                    <input type="text" [(ngModel)]="section.title" [name]="'section_title_' + sectionIndex" class="text-lg font-bold bg-transparent border-b border-gray-600 focus:border-blue-500 outline-none w-full" placeholder="Título de la Sección (ej: MENU PRINCIPAL 120 RACIONES)">
+                    <input type="text" [(ngModel)]="section.title" [name]="'section_title_' + sectionIndex" class="text-lg font-bold bg-transparent border-b border-gray-600 focus:border-blue-500 outline-none w-full" placeholder="Título de la Sección (ej: MENÚ NORMAL)">
                     <button type="button" (click)="removeMenuSection(sectionIndex)" class="text-red-400 hover:text-red-300 text-xl font-bold leading-none ml-4">&times;</button>
                   </div>
 
-                  <div class="space-y-3 pl-4">
-                    @for(item of section.items; track item; let itemIndex = $index) {
-                      <div class="bg-gray-800 p-3 rounded-md border border-gray-700">
-                        @if(item.type === 'table' || item.type === 'postre' || item.type === 'salad') {
-                          <input type="text" [(ngModel)]="item.rationsTitle" [name]="'item_rations_title_' + sectionIndex + '_' + itemIndex" class="text-sm font-semibold bg-transparent border-b border-gray-600 focus:border-blue-500 outline-none w-full mb-2" placeholder="Título de Raciones (ej: MENU 210 RACIONES)">
+                  <!-- NUEVO: Buscador de Platillos -->
+                  <div class="relative mb-4">
+                    <input type="text" [(ngModel)]="dishSearchTerms[sectionIndex]" [name]="'dish_search_' + sectionIndex" placeholder="Buscar platillo para añadir..." class="w-full bg-gray-700 p-2 rounded-lg border border-gray-600">
+                    @if (filteredDishes(sectionIndex).length > 0) {
+                      <ul class="absolute z-20 w-full bg-gray-600 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg">
+                        @for (dish of filteredDishes(sectionIndex); track dish.id) {
+                          <li (click)="addDishToSection(dish, sectionIndex)" class="p-3 hover:bg-gray-500 cursor-pointer text-sm">
+                            <span class="font-semibold">{{ dish.name }}</span> <span class="text-gray-400">- {{ dish.type }}</span>
+                          </li>
                         }
+                      </ul>
+                    }
+                  </div>
+
+                  <!-- NUEVO: Lista de Platillos/Items Añadidos -->
+                  <div class="space-y-3">
+                    @for(item of section.items; track $index; let itemIndex = $index) {
+                      <div class="bg-gray-800 p-3 rounded-md border border-gray-700">
                         <div class="flex justify-between items-center mb-2">
-                          <input type="text" [(ngModel)]="item.title" [name]="'item_title_' + sectionIndex + '_' + itemIndex" class="font-semibold bg-transparent border-b border-gray-600 focus:border-blue-500 outline-none w-full" placeholder="Título del Plato o Ítem">
+                          <h4 class="font-semibold text-blue-400">{{ item.name || item.title }}</h4>
                           <button type="button" (click)="removeMenuItem(sectionIndex, itemIndex)" class="text-red-400 hover:text-red-300 text-lg font-bold leading-none ml-2">&times;</button>
                         </div>
 
-                        @if(item.type === 'table') {
-                          <!-- Tabla de Ingredientes -->
-                          <div class="text-xs space-y-1">
-                            <div class="grid grid-cols-12 gap-2 font-semibold text-gray-400 items-center">
-                              <div class="col-span-5">PRODUCTO</div>
-                              <div class="col-span-2">GRAMAJE</div>
-                              <div class="col-span-2">CANTIDAD</div>
-                              <div class="col-span-2">TOTAL</div>
-                              <div class="col-span-1 text-center">Dest.</div>
-                            </div>
-                            @for(ingredient of item.ingredients; track ingredient; let ingIndex = $index) {
-                              <div class="grid grid-cols-12 gap-2 items-center p-1 rounded" [ngClass]="{'bg-yellow-900/50': ingredient.isHighlighted}">
-                                <input type="text" [(ngModel)]="ingredient.product" [name]="'ing_product_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-5 bg-gray-700 p-1 rounded">
-                                <input type="text" [(ngModel)]="ingredient.gramaje" [name]="'ing_gramaje_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-2 bg-gray-700 p-1 rounded">
-                                <input type="text" [(ngModel)]="ingredient.cantidad" [name]="'ing_cantidad_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-2 bg-gray-700 p-1 rounded">
-                                <input type="text" [(ngModel)]="ingredient.total" [name]="'ing_total_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-2 bg-gray-700 p-1 rounded">
-                                <div class="col-span-1 flex justify-center items-center">
-                                  <input type="checkbox" [(ngModel)]="ingredient.isHighlighted" [name]="'ing_highlight_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="form-checkbox bg-gray-600 border-gray-500 text-yellow-500 focus:ring-yellow-500 h-4 w-4">
-                                  <button type="button" (click)="removeIngredient(sectionIndex, itemIndex, ingIndex)" class="text-red-500 hover:text-red-400 text-lg ml-1">&times;</button>
-                                </div>
-                              </div>
-                            }
-                            <button type="button" (click)="addIngredient(sectionIndex, itemIndex)" class="text-green-400 text-xs mt-2">+ Añadir Ingrediente</button>
-                          </div>
-                        } @else if (item.type === 'postre') {
-                          <!-- Tabla de Postres -->
-                          <div class="text-xs space-y-1">
-                            <div class="grid grid-cols-12 gap-2 font-semibold text-gray-400 items-center">
-                              <div class="col-span-9">PRODUCTO</div>
-                              <div class="col-span-2">GRAMAJE</div>
-                              <div class="col-span-1 text-center">Dest.</div>
-                            </div>
-                            @for(ingredient of item.ingredients; track ingredient; let ingIndex = $index) {
-                              <div class="grid grid-cols-12 gap-2 items-center p-1 rounded" [ngClass]="{'bg-yellow-900/50': ingredient.isHighlighted}">
-                                <input type="text" [(ngModel)]="ingredient.product" [name]="'postre_product_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-9 bg-gray-700 p-1 rounded">
-                                <input type="text" [(ngModel)]="ingredient.gramaje" [name]="'postre_gramaje_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-2 bg-gray-700 p-1 rounded">
-                                <div class="col-span-1 flex justify-center items-center">
-                                  <input type="checkbox" [(ngModel)]="ingredient.isHighlighted" [name]="'postre_highlight_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="form-checkbox bg-gray-600 border-gray-500 text-yellow-500 focus:ring-yellow-500 h-4 w-4">
-                                  <button type="button" (click)="removeIngredient(sectionIndex, itemIndex, ingIndex)" class="text-red-500 hover:text-red-400 text-lg ml-1">&times;</button>
-                                </div>
-                              </div>
-                            }
-                            <button type="button" (click)="addIngredient(sectionIndex, itemIndex)" class="text-green-400 text-xs mt-2">+ Añadir Postre</button>
-                          </div>
-                        } @else if (item.type === 'salad') {
-                          <!-- Tabla de Salad Bar -->
-                          <div class="text-xs space-y-1">
-                            <div class="grid grid-cols-12 gap-2 font-semibold text-gray-400 items-center">
-                              <div class="col-span-9">PRODUCTO</div>
-                              <div class="col-span-2">FUENTES</div>
-                              <div class="col-span-1 text-center">Dest.</div>
-                            </div>
-                            @for(ingredient of item.ingredients; track ingredient; let ingIndex = $index) {
-                              <div class="grid grid-cols-12 gap-2 items-center p-1 rounded" [ngClass]="{'bg-yellow-900/50': ingredient.isHighlighted}">
-                                <input type="text" [(ngModel)]="ingredient.product" [name]="'salad_product_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-9 bg-gray-700 p-1 rounded">
-                                <input type="text" [(ngModel)]="ingredient.fuentes" [name]="'salad_fuentes_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-2 bg-gray-700 p-1 rounded">
-                                <div class="col-span-1 flex justify-center items-center">
-                                  <input type="checkbox" [(ngModel)]="ingredient.isHighlighted" [name]="'salad_highlight_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="form-checkbox bg-gray-600 border-gray-500 text-yellow-500 focus:ring-yellow-500 h-4 w-4">
-                                  <button type="button" (click)="removeIngredient(sectionIndex, itemIndex, ingIndex)" class="text-red-500 hover:text-red-400 text-lg ml-1">&times;</button>
-                                </div>
-                              </div>
-                            }
-                            <button type="button" (click)="addIngredient(sectionIndex, itemIndex)" class="text-green-400 text-xs mt-2">+ Añadir Ítem de Salad Bar</button>
-                          </div>
+                        @if (item.type === 'legacy') {
+                          <div class="text-sm text-yellow-400 bg-yellow-900/50 p-3 rounded-md" [innerHTML]="item.legacy_content"></div>
+                        } @else if (item.type === 'other') {
+                          <input type="text" [(ngModel)]="item.title" [name]="'other_title_' + sectionIndex + '_' + itemIndex" class="font-semibold bg-transparent border-b border-gray-600 focus:border-blue-500 outline-none w-full mb-2" placeholder="Título del Ítem">
+                          <textarea [(ngModel)]="item.description" [name]="'other_desc_' + sectionIndex + '_' + itemIndex" rows="2" class="w-full bg-gray-700 p-2 rounded-lg border border-gray-600 text-sm" placeholder="Descripción..."></textarea>
                         } @else {
-                          <!-- Ítem de solo texto -->
-                          <textarea [(ngModel)]="item.description" [name]="'item_desc_' + sectionIndex + '_' + itemIndex" rows="2" class="w-full bg-gray-700 p-2 rounded-lg border border-gray-600 text-sm" placeholder="Descripción..."></textarea>
-                        }
-                        @if(item.type === 'table' || item.type === 'postre' || item.type === 'salad') {
-                          <div class="mt-3">
-                            <h5 class="text-xs text-gray-400 mb-1">Notas / Recomendaciones</h5>
-                            @for(note of item.notes; track note; let noteIndex = $index) {
-                              <div class="flex items-center gap-2 mb-1">
-                                <input type="text" [(ngModel)]="item.notes[noteIndex]" [name]="'note_' + sectionIndex + '_' + itemIndex + '_' + noteIndex" class="w-full bg-gray-700 p-1 rounded text-sm" placeholder="*Añadir nota...">
-                                <button type="button" (click)="removeNote(sectionIndex, itemIndex, noteIndex)" class="text-red-500 hover:text-red-400 text-lg">&times;</button>
+                          @if (item.type === 'salad') {
+                            <div class="text-xs space-y-1">
+                              <div class="grid grid-cols-12 gap-2 font-semibold text-gray-400 items-center">
+                                <div class="col-span-9">PRODUCTO</div>
+                                <div class="col-span-2">FUENTES</div>
                               </div>
-                            }
-                            <button type="button" (click)="addNote(sectionIndex, itemIndex)" class="text-green-400 text-xs mt-1">+ Añadir Nota</button>
-                          </div>
+                              @for(ingredient of item.ingredients; track $index; let ingIndex = $index) {
+                                <div class="grid grid-cols-12 gap-2 items-center">
+                                  <input type="text" [(ngModel)]="ingredient.product" [name]="'salad_product_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-9 bg-gray-700 p-1 rounded">
+                                  <input type="text" [(ngModel)]="ingredient.fuentes" [name]="'salad_fuentes_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-2 bg-gray-700 p-1 rounded">
+                                  <button type="button" (click)="removeTableIngredient(sectionIndex, itemIndex, ingIndex)" class="text-red-500 hover:text-red-400 text-lg">&times;</button>
+                                </div>
+                              }
+                              <button type="button" (click)="addTableIngredient(sectionIndex, itemIndex)" class="text-green-400 text-xs mt-2">+ Añadir Fila</button>
+                            </div>
+                          } @else if (item.type === 'postre') {
+                            <div class="text-xs space-y-1">
+                              <div class="grid grid-cols-12 gap-2 font-semibold text-gray-400 items-center">
+                                <div class="col-span-9">PRODUCTO</div>
+                                <div class="col-span-2">GRAMAJE</div>
+                              </div>
+                              @for(ingredient of item.ingredients; track $index; let ingIndex = $index) {
+                                <div class="grid grid-cols-12 gap-2 items-center">
+                                  <input type="text" [(ngModel)]="ingredient.product" [name]="'postre_product_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-9 bg-gray-700 p-1 rounded">
+                                  <input type="text" [(ngModel)]="ingredient.gramaje" [name]="'postre_gramaje_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="col-span-2 bg-gray-700 p-1 rounded">
+                                  <button type="button" (click)="removeTableIngredient(sectionIndex, itemIndex, ingIndex)" class="text-red-500 hover:text-red-400 text-lg">&times;</button>
+                                </div>
+                              }
+                              <button type="button" (click)="addTableIngredient(sectionIndex, itemIndex)" class="text-green-400 text-xs mt-2">+ Añadir Fila</button>
+                            </div>
+                          } @else {
+                            <!-- Platillo con ingredientes (del recetario) -->
+                            <div class="text-xs">
+                                <div class="grid grid-cols-4 gap-x-4 font-semibold text-gray-400 mb-1">
+                                  <div>PRODUCTO</div>
+                                  <div class="text-right">GRAMAJE</div>
+                                  <div class="text-right">CANTIDAD</div>
+                                  <div class="text-right">TOTAL (g)</div>
+                                </div>
+                                @for(ingredient of item.ingredients; track $index; let ingIndex = $index) {
+                                  <div class="grid grid-cols-4 gap-x-4 py-1 items-center border-b border-gray-700/50">
+                                    <div>{{ ingredient.product_name }}</div>
+                                    <div class="text-right">{{ ingredient.grammage | number }} g</div>
+                                    <input type="number" min="0" [(ngModel)]="ingredient.cantidad" (ngModelChange)="updateIngredientTotal(sectionIndex, itemIndex, ingIndex)" [name]="'ing_quantity_' + sectionIndex + '_' + itemIndex + '_' + ingIndex" class="w-full bg-gray-700 p-1 rounded-lg border border-gray-600 text-right">
+                                    <div class="text-right font-bold">{{ ingredient.total | number }} g</div>
+                                  </div>
+                                }
+                            </div>
+                          }
                         }
                       </div>
                     }
-                    <div class="flex gap-3 mt-2">
-                      <button type="button" (click)="addMenuItem(sectionIndex, 'table')" class="text-blue-400 text-xs">+ Añadir Plato (con tabla)</button>
-                      <button type="button" (click)="addMenuItem(sectionIndex, 'text')" class="text-blue-400 text-xs">+ Añadir Ítem (solo texto)</button>
-                      <button type="button" (click)="addMenuItem(sectionIndex, 'postre')" class="text-blue-400 text-xs">+ Añadir Postre</button>
-                      <button type="button" (click)="addMenuItem(sectionIndex, 'salad')" class="text-blue-400 text-xs">+ Añadir Salad Bar</button>
-                    </div>
+                  </div>
+                  <div class="mt-3 flex gap-4">
+                    <button type="button" (click)="addSaladBar(sectionIndex)" class="text-blue-400 text-xs">+ Añadir Salad Bar</button>
+                    <button type="button" (click)="addDessert(sectionIndex)" class="text-blue-400 text-xs">+ Añadir Postre</button>
+                    <button type="button" (click)="addOtherItem(sectionIndex)" class="text-blue-400 text-xs">+ Añadir Ítem de Texto</button>
                   </div>
                 </div>
               }
             </div>
           </div>
-
-          <!-- Sección de Productos Requeridos -->
-          <div class="border-t border-gray-700 pt-4">
-            <h3 class="text-lg font-semibold mb-3">Productos Requeridos (para Bodega)</h3>
-            <div class="flex items-end gap-2 mb-4">
-              <div class="flex-grow">
-                <div class="relative">
-                  <label class="block text-sm font-medium text-gray-300 mb-1">Buscar Producto o Añadir Genérico</label>
-                  <input type="text" [(ngModel)]="productSearchTerm" (ngModelChange)="filterProducts()" name="product_search" placeholder="Ej: Arroz, Carne, Código..." class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
-                  @if (filteredProducts.length > 0 && productSearchTerm) {
-                    <ul class="absolute z-10 w-full bg-gray-600 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg">
-                      @for (product of filteredProducts; track product.id) {
-                        <li (click)="selectProduct(product)" class="p-3 hover:bg-gray-500 cursor-pointer text-sm">
-                          <span class="font-semibold">{{ product.name }}</span> <span class="text-gray-400">- {{ product.brand || 'Sin marca' }}</span>
-                        </li>
-                      }
-                    </ul>
-                  }
-                </div>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">Cantidad</label>
-                <input type="number" [(ngModel)]="productToAdd.required_quantity" name="quantity_to_add" class="w-24 bg-gray-700 p-2.5 rounded-lg border border-gray-600">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">Unidad</label>
-                <select [(ngModel)]="productToAdd.unit" name="unit_to_add" class="w-24 bg-gray-700 p-2.5 rounded-lg border border-gray-600">
-                  @for(unit of ['un', 'kg', 'g', 'L', 'ml']; track unit) {
-                    <option [value]="unit">{{unit}}</option>
-                  }
-                </select>
-              </div>
-              <button type="button" (click)="addProductToTask()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-lg self-end">+</button>
-            </div>
-
-            <!-- Lista de productos añadidos -->
+        }
+        
+        <!-- Paso 4: Productos Requeridos (Revisión) -->
+        @if (currentModalStep === 4) {
+          <div style="animation: fade-in 0.5s ease-out forwards;">
+            <h3 class="text-lg font-semibold mb-3">Total de Productos Requeridos (para Bodega)</h3>
             @if(newTask.requiredProducts.length > 0) {
               <ul class="space-y-2 max-h-40 overflow-y-auto bg-gray-900 p-3 rounded-lg">
                 @for(item of newTask.requiredProducts; track item.name) {
-                  <li class="flex justify-between items-center bg-gray-700 p-2 rounded-md text-sm">
-                    <span>{{ item.name }} ({{ item.required_quantity }} {{ item.unit }})</span>
-                    <button type="button" (click)="removeProductFromTask(item.product_id || item.name)" class="text-red-400 hover:text-red-300 text-xl font-bold leading-none">&times;</button>
+                  <li class="flex justify-between items-center bg-gray-700 p-2 rounded-md text-sm font-medium">
+                    <span>{{ item.name }}</span>
+                    <span class="font-mono">{{ item.required_quantity | number }} {{ item.unit }}</span>
                   </li>
                 }
               </ul>
+            } @else {
+              <p class="text-sm text-gray-500">Añade platillos al menú para calcular los productos necesarios.</p>
             }
           </div>
-        </div>
+        }
       </form>
 
-      <div class="flex justify-end mt-6 space-x-4 border-t border-gray-700 pt-6">
-        <button type="button" (click)="closeModal()" class="px-5 py-2.5 rounded-lg bg-gray-600 hover:bg-gray-500 font-medium">Cancelar</button>
-        <button type="submit" form="taskFormElement" [disabled]="!taskForm.valid" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 font-medium disabled:opacity-50">Guardar Pauta</button>
+      <!-- Navegación del Modal -->
+      <div class="flex justify-between mt-6 space-x-4 border-t border-gray-700 pt-6">
+        <button type="button" (click)="closeModal()" class="px-5 py-2.5 rounded-lg bg-gray-600 hover:bg-gray-500 font-medium transition-colors">Cancelar</button>
+        <div class="flex gap-4">
+          @if (currentModalStep > 1) {
+            <button type="button" (click)="prevStep()" class="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 font-medium transition-colors">Anterior</button>
+          }
+          @if (currentModalStep < 4) {
+            <button type="button" (click)="nextStep()" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 font-medium transition-colors">Siguiente</button>
+          }
+          @if (currentModalStep === 4) {
+            <button type="submit" form="taskFormElement" [disabled]="!taskForm.valid || isSaving" class="px-5 py-2.5 rounded-lg bg-green-600 hover:bg-green-500 font-medium disabled:opacity-50 disabled:cursor-wait">{{ isSaving ? 'Guardando...' : 'Guardar Pauta' }}</button>
+          }
+        </div>
       </div>
     </div>
   </div>

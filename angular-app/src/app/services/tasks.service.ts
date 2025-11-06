@@ -37,12 +37,12 @@ export class TasksService {
 
   // Actualiza el estado y/o las observaciones de una tarea
   updateTaskStatus(taskId: number, data: { status?: string, observations?: string }): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/${taskId}/status`, data);
+    return this.http.patch(`${this.apiUrl}/${taskId}`, data);
   }
 
-  // Asigna un producto elegido a un requerimiento de la pauta
-  setChosenProduct(taskProductId: number, chosenProductId: number | null): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/product/${taskProductId}/choose`, { chosenProductId });
+  // Asigna un producto a un requerimiento de la pauta
+  assignProductToTask(taskId: number, requiredProductName: string, chosenProductId: number | null): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${taskId}/assign-product`, { requiredProductName, chosenProductId });
   }
 
   // Obtiene los detalles de una tarea específica

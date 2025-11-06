@@ -18,9 +18,18 @@ window.addEventListener('DOMContentLoaded', () => {
         return new Date(dateString).toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
     };
 
+    const formatStatus = (status) => {
+        switch (status) {
+            case 'pendiente': return 'Pendiente';
+            case 'en_progreso': return 'En Progreso';
+            case 'completada': return 'Completada';
+            default: return status;
+        }
+    };
+
     let assignedUsersHtml = '<p>No hay personal asignado.</p>';
-    if (task.assignedUsers && task.assignedUsers.length > 0) {
-        assignedUsersHtml = task.assignedUsers.map(u => `<li>${u.name}</li>`).join('');
+    if (task.assigned_users && task.assigned_users.length > 0) {
+        assignedUsersHtml = task.assigned_users.map(u => `<li>${u.name}</li>`).join('');
     }
 
     // --- Lógica de cálculo de unidades (replicada del frontend) ---
@@ -74,6 +83,40 @@ window.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
 
+    // --- NUEVA LÓGICA PARA RENDERIZAR MENÚS JSON ---
+    let menuDetailsHtml = '<p>No hay detalles de menú.</p>';
+    if (task.menu_details) {
+        try {
+            const menuSections = JSON.parse(task.menu_details);
+            let generatedHtml = '';
+            for (const section of menuSections) {
+                generatedHtml += `<h3>${section.title || ''}</h3>`;
+                for (const item of section.items) {
+                    if (item.dish_id) {
+                        generatedHtml += `<div class="dish-item"><h4>${item.name || ''}</h4>`;
+                        generatedHtml += '<table><thead><tr><th>PRODUCTO</th><th>GRAMAJE</th><th>CANTIDAD</th><th>TOTAL</th></tr></thead><tbody>';
+                        for (const ing of item.ingredients) {
+                            const total = (ing.grammage || 0) * (ing.cantidad || 0);
+                            generatedHtml += `<tr><td>${ing.product_name || ''}</td><td>${ing.grammage || 0} g</td><td>${ing.cantidad || 1}</td><td>${total} g</td></tr>`;
+                        }
+                        generatedHtml += '</tbody></table></div>';
+                    } else if (item.type === 'salad') {
+                        generatedHtml += `<div class="dish-item"><h4>${item.title || 'Salad Bar'}</h4><table><thead><tr><th>PRODUCTO</th><th>FUENTES</th></tr></thead><tbody>`;
+                        for (const ing of item.ingredients) generatedHtml += `<tr><td>${ing.product || ''}</td><td>${ing.fuentes || ''}</td></tr>`;
+                        generatedHtml += '</tbody></table></div>';
+                    } else if (item.type === 'postre') {
+                        generatedHtml += `<div class="dish-item"><h4>${item.title || 'Postre'}</h4><table><thead><tr><th>PRODUCTO</th><th>GRAMAJE</th></tr></thead><tbody>`;
+                        for (const ing of item.ingredients) generatedHtml += `<tr><td>${ing.product || ''}</td><td>${ing.gramaje || ''} g</td></tr>`;
+                        generatedHtml += '</tbody></table></div>';
+                    } else if (item.type === 'other' || item.type === 'text') { // Es un ítem de texto
+                        generatedHtml += `<p><strong>${item.title}</strong><br>${item.description || ''}</p>`;
+                    }
+                }
+            }
+            menuDetailsHtml = generatedHtml;
+        } catch (e) { menuDetailsHtml = task.menu_details; } // Si falla, muestra el HTML antiguo
+    }
+
     const html = `
       <div class="header">
         <h1>Pauta de Preparación</h1>
@@ -87,7 +130,7 @@ window.addEventListener('DOMContentLoaded', () => {
         <div><strong>Pauta:</strong> ${task.title}</div>
         <div><strong>Bodega:</strong> ${entityName}</div>
         <div><strong>Fecha de Entrega:</strong> ${formatDate(task.due_date)}</div>
-        <div><strong>Estado:</strong> ${task.status}</div>
+        <div><strong>Estado:</strong> ${formatStatus(task.status)}</div>
       </div>
 
       <div class="section">
@@ -112,7 +155,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <!-- NUEVO: Sección de Menús y Raciones -->
       <div class="section">
         <h2>Detalle de Menús (Cocina)</h2>
-        <div class="menu-details">${task.menu_details || '<p>No hay detalles de menú.</p>'}</div>
+        <div class="menu-details">${menuDetailsHtml}</div>
       </div>
 
       <div class="footer">

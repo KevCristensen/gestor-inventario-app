@@ -1,10 +1,11 @@
-<div class="text-white">
+<!-- Contenedor principal con animación de entrada -->
+<div class="text-white" style="animation: fade-in-up 0.7s ease-out forwards;">
     <h1 class="text-3xl font-bold mb-6">Recepción de Mercadería</h1>
   
-    <div class="bg-gray-800 rounded-lg shadow p-6 mb-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-6 rounded-xl mb-6 grid grid-cols-1 md:grid-cols-3 gap-6">
       <div>
         <label for="provider" class="block mb-2 text-sm font-medium text-gray-300">Proveedor</label>
-        <select id="provider" [(ngModel)]="reception.provider_id" name="provider" required class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+        <select id="provider" [(ngModel)]="reception.provider_id" name="provider" required class="w-full bg-gray-700/80 p-2.5 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-300">
           <option [ngValue]="null" disabled>Seleccione un proveedor</option>
           @for(provider of providerList; track provider.id) {
             <option [value]="provider.id">{{ provider.name }}</option>
@@ -13,15 +14,15 @@
       </div>
       <div>
         <label for="invoice_number" class="block mb-2 text-sm font-medium text-gray-300">N° Guía o Factura</label>
-        <input type="text" id="invoice_number" [(ngModel)]="reception.invoice_number" name="invoice_number" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+        <input type="text" id="invoice_number" [(ngModel)]="reception.invoice_number" name="invoice_number" class="w-full bg-gray-700/80 p-2.5 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-300">
       </div>
       <div>
         <label for="transport_temp" class="block mb-2 text-sm font-medium text-gray-300">Temp. Transporte (°C)</label>
-        <input type="number" id="transport_temp" [(ngModel)]="reception.transport_temp" name="transport_temp" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+        <input type="number" id="transport_temp" [(ngModel)]="reception.transport_temp" name="transport_temp" class="w-full bg-gray-700/80 p-2.5 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-300">
       </div>
     </div>
   
-    <div class="bg-gray-800 rounded-lg shadow p-6 mb-6">
+    <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-6 rounded-xl mb-6">
       <label for="barcode-scanner" class="block mb-2 text-lg font-medium text-gray-300">Escanear Código de Barras</label>
       <input 
         type="text" 
@@ -29,40 +30,40 @@
         #barcodeInput
         placeholder="Esperando código..."
         (keyup.enter)="onBarcodeScanned(barcodeInput.value); barcodeInput.value = ''"
-        class="w-full p-4 text-xl bg-gray-700 rounded-lg border border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+        class="w-full p-4 text-2xl bg-gray-900/50 rounded-lg border-2 border-gray-600 focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 focus:outline-none transition-all duration-300"
       >
     </div>
   
-    <div class="bg-gray-800 rounded-lg shadow p-6">
+    <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-6 rounded-xl">
         <h2 class="text-2xl font-bold mb-4">Items a Registrar</h2>
         <table class="w-full text-left table-fixed">
           
-          <thead class="border-b border-gray-600">
-            <tr>
+          <thead class="border-b-2 border-gray-700">
+            <tr class="text-sm text-gray-400">
               <th class="p-2 w-1/4">Producto</th>
               <th class="p-2 w-24">Cantidad</th>
               <th class="p-2 w-40">Lote</th>
               <th class="p-2 w-48">Vencimiento</th>
               <th class="p-2 w-32">Temp. (°C)</th>
-              <th class="p-2 w-24">Acciones</th>
+              <th class="p-2 w-24 text-center">Acciones</th>
             </tr>
           </thead>
       
           <tbody>
             @for(item of reception.items; track item.product_id) {
-              <tr class="border-b border-gray-700">
+              <tr class="border-b border-gray-700/50 hover:bg-gray-700/40 transition-colors duration-200">
                 <td class="p-2">{{ item.name }}</td>
-                <td class="p-2"><input type="number" [(ngModel)]="item.quantity" class="w-full bg-gray-700 p-1 rounded"></td>
-                <td class="p-2"><input type="text" [(ngModel)]="item.lot_number" class="w-full bg-gray-700 p-1 rounded"></td>
-                <td class="p-2"><input type="date" [(ngModel)]="item.expiration_date" class="w-full bg-gray-700 p-1 rounded text-gray-200" [style.color-scheme]="'dark'"></td>
-                <td class="p-2"><input type="number" [(ngModel)]="item.product_temp" class="w-full bg-gray-700 p-1 rounded"></td>
-                <td class="p-2">
-                  <button (click)="removeItem(item.product_id)" class="text-red-400 hover:text-red-300">Quitar</button>
+                <td class="p-2"><input type="number" [(ngModel)]="item.quantity" class="w-full bg-gray-700/80 p-2 rounded-lg border border-gray-600 focus:ring-blue-500 focus:outline-none"></td>
+                <td class="p-2"><input type="text" [(ngModel)]="item.lot_number" class="w-full bg-gray-700/80 p-2 rounded-lg border border-gray-600 focus:ring-blue-500 focus:outline-none"></td>
+                <td class="p-2"><input type="date" [(ngModel)]="item.expiration_date" class="w-full bg-gray-700/80 p-2 rounded-lg border border-gray-600 text-gray-200" [style.color-scheme]="'dark'"></td>
+                <td class="p-2"><input type="number" [(ngModel)]="item.product_temp" class="w-full bg-gray-700/80 p-2 rounded-lg border border-gray-600 focus:ring-blue-500 focus:outline-none"></td>
+                <td class="p-2 text-center">
+                  <button (click)="removeItem(item.product_id)" class="text-red-400 hover:text-red-300 transition-colors transform hover:scale-110">Quitar</button>
                 </td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="6" class="p-4 text-center text-gray-500">Aún no se han escaneado productos.</td>
+                <td colspan="6" class="p-8 text-center text-gray-500">Aún no se han escaneado productos.</td>
               </tr>
             }
           </tbody>
@@ -72,14 +73,14 @@
           <button 
             (click)="printReceipt()" 
             [disabled]="reception.items.length === 0 || isSaving"
-            class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50">
+            class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-lg disabled:opacity-50 transition-all transform hover:scale-105">
             Imprimir
           </button>
         
           <button 
           (click)="saveReception()" 
           [disabled]="!reception.provider_id || reception.items.length === 0 || isSaving" 
-          class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center min-w-[200px]">
+          class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center min-w-[200px] transition-all transform hover:scale-105">
           @if (isSaving) {
             <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

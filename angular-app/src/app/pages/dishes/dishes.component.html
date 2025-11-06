@@ -1,0 +1,109 @@
+<!-- Contenedor principal con animación de entrada -->
+<div class="text-white" style="animation: fade-in-up 0.7s ease-out forwards;">
+  <!-- Encabezado -->
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Gestor de Platillos</h1>
+    <button (click)="openModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg transition-all transform hover:scale-105">
+      + Crear Platillo
+    </button>
+  </div>
+
+  <!-- Lista de Platillos -->
+  @if (isLoading) {
+    <div class="bg-gray-800/50 rounded-xl shadow p-8 text-center text-gray-500 border border-dashed border-gray-700">Cargando platillos...</div>
+  } @else if (dishes.length > 0) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (dish of dishes; track dish.id; let i = $index) {
+        <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-xl shadow-lg border border-gray-700/50 flex flex-col transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 opacity-0"
+             style="animation: card-enter 0.5s ease-out forwards; animation-delay: {{ i * 80 }}ms;">
+          <div class="flex-grow">
+            <div class="flex justify-between items-start mb-2">
+              <h2 class="text-xl font-bold text-blue-400">{{ dish.name }}</h2>
+              <span class="text-xs font-semibold px-2 py-1 rounded-full capitalize"
+                    [ngClass]="{
+                      'bg-green-500 text-green-900': dish.type === 'vegetariano',
+                      'bg-blue-500 text-blue-900': dish.type === 'normal',
+                      'bg-yellow-500 text-yellow-900': dish.type === 'hipocalorico'
+                    }">
+                {{ dish.type }}
+              </span>
+            </div>
+            <h4 class="text-sm font-semibold text-gray-400 mt-4 mb-2">Ingredientes:</h4>
+            <ul class="text-sm text-gray-300 list-disc list-inside space-y-1">
+              @for(ingredient of dish.ingredients; track ingredient.id) {
+                <li>{{ ingredient.product_name }} ({{ ingredient.grammage }}g)</li>
+              }
+            </ul>
+          </div>
+          <div class="border-t border-gray-700 pt-4 mt-4 flex justify-end gap-2">
+            <button (click)="openModal(dish)" class="text-sm bg-gray-600 hover:bg-gray-500 text-white py-1 px-3 rounded-lg transition-colors transform hover:scale-110">Editar</button>
+            <button (click)="deleteDish(dish.id!)" class="text-sm bg-red-700 hover:bg-red-600 text-white py-1 px-3 rounded-lg transition-colors transform hover:scale-110">Eliminar</button>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="bg-gray-800/50 rounded-xl shadow p-8 text-center text-gray-500 border border-dashed border-gray-700">
+      No hay platillos creados. ¡Crea el primero!
+    </div>
+  }
+</div>
+
+<!-- Modal para Crear/Editar Platillo -->
+@if (isModalOpen) {
+  <div class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex justify-center items-center z-50" style="animation: fade-in 0.3s ease-out forwards;">
+    <div class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 p-8 w-full max-w-2xl text-white transform transition-all duration-300 max-h-[90vh] flex flex-col" style="animation: fade-in-up 0.5s ease-out forwards;">
+      <h2 class="text-2xl font-bold mb-6">{{ editingDishId ? 'Editar' : 'Crear' }} Platillo</h2>
+      
+      <form #dishForm="ngForm" (ngSubmit)="saveDish()" class="flex-grow overflow-y-auto pr-4 -mr-4">
+        <div class="space-y-6">
+          <!-- Nombre y Tipo -->
+          <div class="grid grid-cols-2 gap-6">
+            <div>
+              <label for="dishName" class="block text-sm font-medium text-gray-300 mb-1">Nombre del Platillo</label>
+              <input type="text" id="dishName" [(ngModel)]="newDish.name" name="name" required class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+            </div>
+            <div>
+              <label for="dishType" class="block text-sm font-medium text-gray-300 mb-1">Tipo de Menú</label>
+              <select id="dishType" [(ngModel)]="newDish.type" name="type" required class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+                <option value="normal">Normal</option>
+                <option value="hipocalorico">Hipocalórico</option>
+                <option value="vegetariano">Vegetariano</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Ingredientes -->
+          <div class="border-t border-gray-700 pt-4">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-lg font-semibold">Ingredientes</h3>
+              <button type="button" (click)="addIngredient()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1 px-3 rounded-lg">+ Añadir Ingrediente</button>
+            </div>
+            <div class="space-y-2">
+              @for(ingredient of newDish.ingredients; track trackByIndex(i, ingredient); let i = $index) {
+                <div class="grid grid-cols-12 gap-2 items-center">
+                  <div class="col-span-8">
+                    <label class="text-xs text-gray-400">Producto</label>
+                    <input type="text" [(ngModel)]="ingredient.product_name" [name]="'product_name_' + i" required class="w-full bg-gray-700/80 p-2 rounded-lg border border-gray-600 focus:ring-blue-500 focus:outline-none">
+                  </div>
+                  <div class="col-span-3">
+                    <label class="text-xs text-gray-400">Gramaje (g)</label>
+                    <input type="number" [(ngModel)]="ingredient.grammage" [name]="'grammage_' + i" required class="w-full bg-gray-700/80 p-2 rounded-lg border border-gray-600 focus:ring-blue-500 focus:outline-none">
+                  </div>
+                  <div class="col-span-1 self-end">
+                    <button type="button" (click)="removeIngredient(i)" class="text-red-400 hover:text-red-300 text-2xl font-bold leading-none w-full">&times;</button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <div class="flex justify-end mt-6 space-x-4 border-t border-gray-700 pt-6">
+        <button type="button" (click)="closeModal()" class="px-5 py-2.5 rounded-lg bg-gray-600 hover:bg-gray-500 font-medium transition-colors">Cancelar</button>
+        <button type="submit" (click)="saveDish()" [disabled]="!dishForm.valid" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 font-medium disabled:opacity-50 transition-colors">Guardar Platillo</button>
+      </div>
+    </div>
+  </div>
+}

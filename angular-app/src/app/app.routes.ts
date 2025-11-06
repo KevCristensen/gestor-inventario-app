@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/login/login.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { authGuard } from './guards/auth.guard';
+import { adminGuard } from './guards/admin.guard';
 import { LayoutComponent } from './components/layout/layout.component'; 
 import { ProvidersComponent } from './pages/providers/providers.component'; 
 import { ProductsComponent } from './pages/products/products.component'; 
@@ -17,6 +18,8 @@ import { AssetInventoryComponent } from './pages/asset-inventory/asset-inventory
 import { ProductLookupComponent } from './pages/product-lookup/product-lookup.component';
 import { LossDamageReportComponent } from './pages/loss-damage-report/loss-damage-report.component';
 import { ChatComponent } from './pages/chat/chat.component';
+import { DishesComponent } from './pages/dishes/dishes.component';
+
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent },
@@ -37,6 +40,7 @@ export const routes: Routes = [
             { path: 'loss-damage-report', component: LossDamageReportComponent },
             { path: 'chat', component: ChatComponent }, 
             { path: 'assets', component: AssetsComponent },
+            { path: 'dishes', component: DishesComponent, canActivate: [authGuard, adminGuard] }, // Nueva ruta
             { path: 'asset-movements', component: AssetMovementsComponent },
             { path: 'asset-inventory', component: AssetInventoryComponent }, 
             { path: 'product-lookup', component: ProductLookupComponent },     

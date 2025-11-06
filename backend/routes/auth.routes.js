@@ -4,6 +4,7 @@ const dbPool = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const log = require('electron-log');
+const { checkRole } = require('../middleware/auth.middleware');
 
 // Endpoint para autenticar un usuario
 // Ruta: POST /api/auth/login
@@ -37,7 +38,8 @@ router.post('/login', async (req, res) => {
             email: user.email, 
             name: user.name, // <-- Añade esta línea
             role: user.role, 
-            entity_id: user.entity_id 
+            entity_id: user.entity_id,
+            status: user.status // <-- AÑADIR ESTA LÍNEA
           };
           
         const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '8h' });
@@ -53,5 +55,28 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor.', details: error.code || error.message });
     }
 });
+
+router.put('/status', checkRole, async (req, res) => {
+    const { userId, status } = req.body;
+    const validStatuses = ['en linea', 'ausente', 'ocupado'];
+
+    if (!userId || !status || !validStatuses.includes(status)) {
+        return res.status(400).json({ error: 'Datos no válidos para actualizar el estado.' });
+    }
+
+    // Asegurarnos que el usuario que hace la petición es el mismo que se quiere actualizar, o es un admin.
+    if (req.user.id !== userId && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'No tienes permiso para cambiar el estado de otro usuario.' });
+    }
+
+    try {
+        await dbPool.query('UPDATE users SET status = ? WHERE id = ?', [status, userId]);
+        res.json({ message: 'Estado actualizado correctamente.' });
+    } catch (error) {
+        log.error('Error al actualizar el estado del usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor al actualizar el estado.' });
+    }
+});
+
 
 module.exports = router;

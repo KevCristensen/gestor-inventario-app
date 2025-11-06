@@ -1,10 +1,11 @@
-<div class="text-white">
+<!-- Contenedor principal con animación de entrada -->
+<div class="text-white" style="animation: fade-in-up 0.7s ease-out forwards;">
   @if (isLoading) {
-    <div class="text-center p-8 text-gray-500">Cargando detalle de la pauta...</div>
+    <div class="bg-gray-800/50 rounded-xl shadow p-8 text-center text-gray-500 border border-dashed border-gray-700">Cargando detalle de la pauta...</div>
   } @else if (task) {
     <!-- Encabezado -->
     <div class="mb-8">
-      <a routerLink="/dashboard/tasks" class="text-blue-400 hover:text-blue-300 mb-4 inline-block">&larr; Volver a Pautas</a>
+      <a routerLink="/dashboard/tasks" class="text-blue-400 hover:text-blue-300 mb-4 inline-block transition-colors">&larr; Volver a Pautas</a>
       <div class="flex justify-between items-start">
         <div>
           <h1 class="text-4xl font-bold">{{ task.title }}</h1>
@@ -20,48 +21,124 @@
             {{ task.status }}
           </span>
           <button (click)="editTask()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
-            Editar
+            Editar Pauta
           </button>
           <button (click)="printTask()" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">
             Imprimir
           </button>
         </div>
       </div>
+      <p class="text-gray-500 text-sm mt-2">Creada por: {{ task.creator_name }}</p>
     </div>
 
     <!-- Contenido Principal -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Columna Izquierda: Descripción y Asignados -->
       <div class="lg:col-span-2 space-y-6">
-        <div class="bg-gray-800 rounded-lg shadow p-6">
+        <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-700/50">
           <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2">Cambiar Estado</h2>
           <div class="flex gap-2">
-            <button (click)="updateStatus('pendiente')" [disabled]="task.status === 'pendiente'" class="flex-1 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-500 disabled:text-yellow-900">Pendiente</button>
-            <button (click)="updateStatus('en_progreso')" [disabled]="task.status === 'en_progreso'" class="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-500 disabled:text-blue-900">En Progreso</button>
-            <button (click)="updateStatus('completada')" [disabled]="task.status === 'completada'" class="flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:bg-green-500 disabled:text-green-900">Completada</button>
+            <button (click)="updateStatus('pendiente')" [disabled]="task.status === 'pendiente'" class="flex-1 py-2 rounded-lg bg-yellow-600 hover:bg-yellow-500 disabled:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors transform hover:scale-105">Pendiente</button>
+            <button (click)="updateStatus('en_progreso')" [disabled]="task.status === 'en_progreso'" class="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors transform hover:scale-105">En Progreso</button>
+            <button (click)="updateStatus('completada')" [disabled]="task.status === 'completada'" class="flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-500 disabled:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors transform hover:scale-105">Completada</button>
           </div>
         </div>
-        <div class="bg-gray-800 rounded-lg shadow p-6">
+        <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-700/50">
           <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2">Observaciones</h2>
           <textarea [(ngModel)]="task.observations" (blur)="tasksService.updateTaskStatus(task.id, { observations: task.observations }).subscribe()"
-                    rows="4" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600" placeholder="Añadir observaciones..."></textarea>
+                    rows="4" class="w-full bg-gray-700/80 p-2.5 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-300" placeholder="Añadir observaciones..."></textarea>
         </div>
-        <div class="bg-gray-800 rounded-lg shadow p-6">
+        <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-700/50">
           <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2">Descripción</h2>
           <p class="text-gray-300 whitespace-pre-wrap">{{ task.description || 'No hay descripción.' }}</p>
         </div>
         <!-- NUEVO: Detalle de Menús y Raciones -->
-        <div class="bg-gray-800 rounded-lg shadow p-6">
+        <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-700/50">
           <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2">Detalle de Menús (Cocina)</h2>
-          <div class="menu-details-view" [innerHTML]="task.menu_details || '<p class=\'text-gray-500\'>No hay detalles de menú.</p>'"></div>
+          <div class="space-y-6">
+            @for(section of task.menuSections; track $index) {
+              <div class="bg-gray-900/50 backdrop-blur-sm p-4 rounded-xl border border-gray-700/50 shadow-md">
+                <h3 class="text-xl font-semibold text-blue-400 mb-3">{{ section.title }}</h3>
+                <div class="space-y-4">
+                  @for(item of section.items; track $index) {
+                    <div class="bg-gray-800/80 p-4 rounded-lg border border-gray-700/50">
+                      <h4 class="font-semibold text-lg mb-2">{{ item.name || item.title }}</h4>
+  
+                      @if (item.type === 'legacy') {
+                        <div class="text-sm text-yellow-400 bg-yellow-900/50 p-3 rounded-md" [innerHTML]="item.legacy_content"></div>
+                      } @else if (item.type === 'other') {
+                        <p class="text-gray-300">{{ item.description }}</p>
+                      } @else if (item.type === 'salad') {
+                        <table class="w-full text-sm text-left border-collapse">
+                          <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                            <tr>
+                              <th class="px-4 py-2">Producto</th>
+                              <th class="px-4 py-2">Fuentes</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for(ing of item.ingredients; track $index) {
+                              <tr class="border-b border-gray-700/50 hover:bg-gray-700/40 transition-colors duration-200">
+                                <td class="px-4 py-2">{{ ing.product }}</td>
+                                <td class="px-4 py-2">{{ ing.fuentes }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      } @else if (item.type === 'postre') {
+                        <table class="w-full text-sm text-left border-collapse">
+                          <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                            <tr>
+                              <th class="px-4 py-2">Producto</th>
+                              <th class="px-4 py-2 text-right">Gramaje</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for(ing of item.ingredients; track $index) {
+                              <tr class="border-b border-gray-700/50 hover:bg-gray-700/40 transition-colors duration-200">
+                                <td class="px-4 py-2">{{ ing.product }}</td>
+                                <td class="px-4 py-2 text-right">{{ ing.gramaje }} g</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      } @else {
+                        <!-- Platillo Normal del Recetario -->
+                        <table class="w-full text-sm text-left border-collapse">
+                          <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                            <tr>
+                              <th class="px-4 py-2">Producto</th>
+                              <th class="px-4 py-2 text-right">Gramaje</th>
+                              <th class="px-4 py-2 text-right">Cantidad</th>
+                              <th class="px-4 py-2 text-right">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for(ing of item.ingredients; track $index) {
+                              <tr class="border-b border-gray-700/50 hover:bg-gray-700/40 transition-colors duration-200">
+                                <td class="px-4 py-2">{{ ing.product_name }}</td>
+                                <td class="px-4 py-2 text-right">{{ ing.grammage | number }} g</td>
+                                <td class="px-4 py-2 text-right">{{ ing.cantidad | number }}</td>
+                                <td class="px-4 py-2 text-right font-semibold">{{ (ing.grammage || 0) * (ing.cantidad || 0) | number }} g</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
         </div>
         <!-- FIN NUEVO -->
-        <div class="bg-gray-800 rounded-lg shadow p-6">
+        <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-700/50">
           <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2">Personal Asignado</h2>
-          @if (task.assignedUsers && task.assignedUsers.length > 0) {
+          @if (task.assigned_users && task.assigned_users.length > 0) {
             <div class="flex flex-wrap gap-3">
-              @for (user of task.assignedUsers; track user.id) {
-                <span class="bg-gray-700 text-gray-200 px-3 py-1 rounded-full text-sm">{{ user.name }}</span>
+              @for (user of task.assigned_users; track user.id; let i = $index) {
+                <span class="bg-blue-700/50 text-blue-100 px-4 py-1 rounded-full text-sm font-medium transition-all transform hover:scale-105">{{ user.name }}</span>
               }
             </div>
           } @else {
@@ -71,15 +148,18 @@
       </div>
 
       <!-- Columna Derecha: Productos Requeridos y Stock -->
-      <div class="bg-gray-800 rounded-lg shadow p-6">
+      <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-700/50">
         <h2 class="text-2xl font-semibold mb-4 border-b border-gray-700 pb-2">Productos Requeridos</h2>
         @if (task.requiredProducts && task.requiredProducts.length > 0) {
-          <ul class="space-y-4">
-            @for (reqProduct of task.requiredProducts; track reqProduct.task_product_id) {
-              <li class="p-3 bg-gray-700 rounded-md">
+          <ul class="space-y-4 relative">
+            @if(updatingRequirement) {
+              <div class="absolute inset-0 bg-gray-800/50 backdrop-blur-sm flex items-center justify-center rounded-xl z-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div></div>
+            }
+            @for (reqProduct of task.requiredProducts; track reqProduct.name) {
+              <li class="bg-gradient-to-br from-gray-700 to-gray-800 p-4 rounded-xl shadow-md border border-gray-600/50">
                 <div class="flex justify-between items-center font-semibold">
                   <span>{{ reqProduct.name }}</span>
-                  <span class="font-mono">{{ reqProduct.required_quantity }} {{ reqProduct.required_unit }}</span>
+                  <span class="font-mono text-lg text-blue-300">{{ reqProduct.required_quantity }} {{ reqProduct.required_unit }}</span>
                 </div>
 
                 <!-- Sugerencias de Productos -->
@@ -88,21 +168,29 @@
                   <div class="space-y-2">
                     @for(suggestion of reqProduct.suggestions; track suggestion.id) {
                       @if (suggestion.current_stock > 0) {
-                        <div class="flex items-center justify-between p-2 rounded-md" [ngClass]="{'bg-blue-900 border border-blue-700': reqProduct.chosen_product_id === suggestion.id, 'bg-gray-800': reqProduct.chosen_product_id !== suggestion.id}">
+                        <div class="flex items-center justify-between p-3 rounded-lg border border-gray-700/50 transform hover:scale-[1.01] transition-all duration-200"
+                             [ngClass]="{
+                               'bg-blue-900/40 border-blue-700': reqProduct.chosen_product_id === suggestion.id,
+                               'bg-gray-800/70': reqProduct.chosen_product_id !== suggestion.id
+                             }">
                           <div>
                             <p class="text-sm font-medium">{{ suggestion.name }} <span class="text-gray-400">- {{ suggestion.brand }}</span></p>
-                            <p class="text-xs" [ngClass]="{'text-green-400': suggestion.current_stock >= calculateNeededUnits(reqProduct, suggestion), 'text-red-500': suggestion.current_stock < calculateNeededUnits(reqProduct, suggestion)}">
-                              Stock: {{ suggestion.current_stock | number }} un. | Necesitas: {{ calculateNeededUnits(reqProduct, suggestion) }} un.
+                            <p class="text-sm font-bold mt-1"
+                               [ngClass]="{
+                                 'text-green-400': suggestion.current_stock >= calculateNeededUnits(reqProduct, suggestion),
+                                 'text-red-500': suggestion.current_stock < calculateNeededUnits(reqProduct, suggestion)
+                               }">
+                              Stock: {{ suggestion.current_stock | number }} un. | Necesitas: <span class="text-blue-300">{{ calculateNeededUnits(reqProduct, suggestion) }}</span> un.
                             </p>
                           </div>
                           @if (reqProduct.chosen_product_id === suggestion.id) {
-                            <button (click)="selectProductForRequirement(reqProduct.task_product_id, null)" 
-                                    class="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-500">
+                            <button (click)="selectProductForRequirement(reqProduct.name, null)" [disabled]="updatingRequirement === reqProduct.name"
+                                    class="text-xs px-3 py-1 rounded-lg bg-red-600 hover:bg-red-500 transition-colors transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed">
                               Quitar
                             </button>
                           } @else {
-                            <button (click)="selectProductForRequirement(reqProduct.task_product_id, suggestion.id)" 
-                                    class="text-xs px-2 py-1 rounded bg-blue-600 hover:bg-blue-500">
+                            <button (click)="selectProductForRequirement(reqProduct.name, suggestion.id)" [disabled]="updatingRequirement === reqProduct.name"
+                                    class="text-xs px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed">
                               Elegir
                             </button>
                           }
@@ -122,6 +210,6 @@
       </div>
     </div>
   } @else {
-    <div class="text-center p-8 text-gray-500">No se pudo encontrar la pauta solicitada.</div>
+    <div class="bg-gray-800/50 rounded-xl shadow p-8 text-center text-gray-500 border border-dashed border-gray-700">No se pudo encontrar la pauta solicitada.</div>
   }
 </div>

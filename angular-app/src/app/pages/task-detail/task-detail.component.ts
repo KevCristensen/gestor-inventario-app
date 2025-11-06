@@ -18,6 +18,9 @@ export class TaskDetailComponent implements OnInit {
   isLoading = true;
   entityName: string = '';
 
+  // NUEVO: Estado de carga para un producto requerido específico
+  updatingRequirement: string | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -29,6 +32,13 @@ export class TaskDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const taskId = this.route.snapshot.paramMap.get('id');
+    if (taskId) {
+      this.loadTaskDetails(+taskId);
+    }
+  }
+
+  private loadTaskDetails(taskId: number): void {
+    this.isLoading = true;
     const currentUser = this.authService.getCurrentUser();
 
     if (taskId && currentUser?.entity_id) {
@@ -38,7 +48,10 @@ export class TaskDetailComponent implements OnInit {
       forkJoin([entityRequest, taskRequest]).subscribe({
         next: ([entity, taskData]) => {
           this.entityName = entity.name;
-          this.task = this.processTaskMenuDetails(taskData); // Procesamos el menú
+          // Procesamos los datos JSON que vienen como strings desde el backend
+          const processedTask = this.processRawTaskData(taskData);
+          this.task = processedTask;
+
           this.isLoading = false;
           this.cdr.detectChanges(); // Actualizamos la vista una vez que tenemos todos los datos.
         },
@@ -53,93 +66,77 @@ export class TaskDetailComponent implements OnInit {
     }
   }
 
-  // Convierte el JSON del menú a HTML para mostrarlo
-  private processTaskMenuDetails(task: any): any {
-    if (!task.menu_details) {
-      return task;
+
+  /**
+   * Procesa los datos crudos de la tarea, convirtiendo los campos JSON (que llegan como strings)
+   * en objetos/arrays de JavaScript y generando el HTML para el menú.
+   */
+  private processRawTaskData(task: any): any {
+    const processedTask = { ...task };
+    
+    // 1. Asignar `assigned_users` (el backend ahora lo envía como un array de objetos)
+    processedTask.assigned_users = processedTask.assigned_users || [];
+
+    // 2. Asignar `required_products` (el backend ahora lo envía como objeto enriquecido)
+    // y unificar el nombre de la propiedad para la plantilla.
+    processedTask.requiredProducts = processedTask.required_products || [];
+    for (const reqProduct of processedTask.requiredProducts) {
+      reqProduct.required_unit = reqProduct.unit; // Unificamos la propiedad de unidad
     }
 
+    // 2. Parsear `menu_details` para que la plantilla pueda iterar sobre él.
     try {
-      const menuSections = JSON.parse(task.menu_details);
-      let menuDetailsHtml = '';
-
-      for (const section of menuSections) {
-        menuDetailsHtml += `<h3>${section.title || ''}</h3>`;
-        for (const item of section.items) {
-          if (item.type === 'table' || item.type === 'postre' || item.type === 'salad') {
-            if (item.rationsTitle) menuDetailsHtml += `<h4>${item.rationsTitle}</h4>`;
-            menuDetailsHtml += `<p><strong>${item.title}</strong></p>`;
-          }
-
-          if (item.type === 'table') {
-            menuDetailsHtml += '<table><thead><tr><th>PRODUCTO</th><th>GRAMAJE</th><th>CANTIDAD</th><th>TOTAL</th></tr></thead><tbody>';
-            for (const ing of item.ingredients) menuDetailsHtml += `<tr${ing.isHighlighted ? ' class="highlighted-row"' : ''}><td>${ing.product || ''}</td><td>${ing.gramaje || ''}</td><td>${ing.cantidad || ''}</td><td>${ing.total || ''}</td></tr>`;
-            menuDetailsHtml += '</tbody></table>';
-          } else if (item.type === 'postre') {
-            menuDetailsHtml += '<table><thead><tr><th>PRODUCTO</th><th>GRAMAJE</th></tr></thead><tbody>';
-            for (const ing of item.ingredients) menuDetailsHtml += `<tr${ing.isHighlighted ? ' class="highlighted-row"' : ''}><td>${ing.product || ''}</td><td>${ing.gramaje || ''}</td></tr>`;
-            menuDetailsHtml += '</tbody></table>';
-          } else if (item.type === 'salad') {
-            menuDetailsHtml += '<table><thead><tr><th>PRODUCTO</th><th>FUENTES</th></tr></thead><tbody>';
-            for (const ing of item.ingredients) menuDetailsHtml += `<tr${ing.isHighlighted ? ' class="highlighted-row"' : ''}><td>${ing.product || ''}</td><td>${ing.fuentes || ''}</td></tr>`;
-            menuDetailsHtml += '</tbody></table>';
-          } else { // type 'text'
-            menuDetailsHtml += `<p><strong>${item.title}</strong><br>${item.description}</p>`;
-          }
-
-          if (item.notes && item.notes.length > 0) {
-            item.notes.forEach((note: string) => { if (note) menuDetailsHtml += `<p><em>${note}</em></p>`; });
-          }
-        }
-      }
-      // Sobreescribimos la propiedad con el HTML generado
-      return { ...task, menu_details: menuDetailsHtml };
+      processedTask.menuSections = JSON.parse(processedTask.menu_details || '[]');
     } catch (e) {
       console.error('El detalle del menú no es un JSON válido, se mostrará como texto.', e);
-      return task; // Devuelve la tarea original si falla el parseo
+      processedTask.menuSections = [];
     }
+    return processedTask;
   }
 
   updateStatus(newStatus: string): void {
-    this.tasksService.updateTaskStatus(this.task.id, { status: newStatus }).subscribe(() => {
-      this.task.status = newStatus;
-      this.cdr.detectChanges();
+    if (!this.task) return;
+    const payload = { status: newStatus };
+    this.tasksService.updateTaskStatus(this.task.id, payload).subscribe({
+      next: () => {
+        this.task.status = newStatus;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error al actualizar el estado', err)
     });
   }
 
-  // --- Lógica para la selección inteligente de productos ---
-
-  convertToBaseUnits(quantity: number, unit: string): number {
-    switch (unit?.toLowerCase()) {
-      case 'kg': return quantity * 1000;
-      case 'g': return quantity;
-      case 'l': return quantity * 1000; // Asumiendo 1L = 1000ml
-      case 'ml': return quantity;
-      default:
-        return quantity; // Para 'un' y otros, la cantidad base es la misma.
-    }
-  }
-
-  calculateNeededUnits(requiredProduct: any, suggestedProduct: any): number {
-    // Si el requerimiento es por unidad, la cantidad necesaria es la misma que la requerida.
+  calculateNeededUnits(requiredProduct: any, suggestedProduct: any): number | string {
+    // Esta función puede ser más compleja dependiendo de las unidades
     if (requiredProduct.required_unit === 'un') {
       return requiredProduct.required_quantity;
     }
-
-    const requiredAmountInBase = this.convertToBaseUnits(requiredProduct.required_quantity, requiredProduct.required_unit);
-    const productAmountInBase = this.convertToBaseUnits(suggestedProduct.weight, suggestedProduct.unit_of_measure);
-
-    if (productAmountInBase <= 0) return Infinity; // No se puede cumplir si el producto no tiene peso/volumen
-
-    // Redondea hacia arriba para asegurar que se cumple el requerimiento
+    // Asumimos conversión simple si no es por unidad
+    const requiredAmountInBase = requiredProduct.required_quantity; // Asumiendo que ya está en gramos
+    const productAmountInBase = suggestedProduct.weight;
+    if (productAmountInBase <= 0) return 'N/A';
     return Math.ceil(requiredAmountInBase / productAmountInBase);
   }
 
-  selectProductForRequirement(taskProductId: number, chosenProductId: number | null): void {
-    this.tasksService.setChosenProduct(taskProductId, chosenProductId).subscribe(() => {
-      // Recargamos los datos para reflejar la selección
-      this.isLoading = true;
-      this.ngOnInit();
+  selectProductForRequirement(requiredProductName: string, chosenProductId: number | null): void {
+    if (!this.task || this.updatingRequirement) return; // Evita clics múltiples
+
+    this.updatingRequirement = requiredProductName; // Inicia el estado de carga para este producto
+
+    this.tasksService.assignProductToTask(this.task.id, requiredProductName, chosenProductId).subscribe({
+      next: () => {
+        // Actualización optimista: actualizamos el estado localmente para una respuesta instantánea.
+        const reqProduct = this.task.requiredProducts.find((p: any) => p.name === requiredProductName);
+        if (reqProduct) {
+          reqProduct.chosen_product_id = chosenProductId;
+          // Si quitamos la selección, también limpiamos el objeto `chosenProduct` si existe.
+          if (chosenProductId === null) {
+            reqProduct.chosenProduct = null;
+          }
+        }
+        this.updatingRequirement = null; // Finaliza el estado de carga
+        this.cdr.detectChanges();
+      }
     });
   }
 

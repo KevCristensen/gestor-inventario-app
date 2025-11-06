@@ -1,5 +1,5 @@
-<div class="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50">
-  <div class="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-lg text-white">
+<div class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex justify-center items-center z-50" style="animation: fade-in 0.3s ease-out forwards;">
+  <div class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 p-8 w-full max-w-2xl text-white transform transition-all duration-300" style="animation: fade-in-up 0.5s ease-out forwards;">
     <h2 class="text-2xl font-bold mb-6">{{ provider.id ? 'Editar' : 'Crear' }} Proveedor</h2>
 
     <form (ngSubmit)="onSubmit()">
@@ -7,35 +7,35 @@
         
         <div>
           <label for="name" class="block mb-2 text-sm font-medium text-gray-300">Nombre</label>
-          <input type="text" id="name" [(ngModel)]="provider.name" name="name" required class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+          <input type="text" id="name" [(ngModel)]="provider.name" name="name" required class="w-full bg-gray-700/80 p-2.5 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-300">
         </div>
         <div>
           <label for="rut" class="block mb-2 text-sm font-medium text-gray-300">RUT</label>
-          <input type="text" id="rut" [(ngModel)]="provider.rut" name="rut" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+          <input type="text" id="rut" [(ngModel)]="provider.rut" name="rut" class="w-full bg-gray-700/80 p-2.5 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-300">
         </div>
         <div>
           <label for="contact_person" class="block mb-2 text-sm font-medium text-gray-300">Persona de Contacto</label>
-          <input type="text" id="contact_person" [(ngModel)]="provider.contact_person" name="contact_person" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+          <input type="text" id="contact_person" [(ngModel)]="provider.contact_person" name="contact_person" class="w-full bg-gray-700/80 p-2.5 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-300">
         </div>
         <div>
           <label for="phone" class="block mb-2 text-sm font-medium text-gray-300">Teléfono</label>
-          <input type="text" id="phone" [(ngModel)]="provider.phone" name="phone" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+          <input type="text" id="phone" [(ngModel)]="provider.phone" name="phone" class="w-full bg-gray-700/80 p-2.5 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-300">
         </div>
         <div class="col-span-1 md:col-span-2">
           <label for="email" class="block mb-2 text-sm font-medium text-gray-300">Email</label>
-          <input type="email" id="email" [(ngModel)]="provider.email" name="email" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+          <input type="email" id="email" [(ngModel)]="provider.email" name="email" class="w-full bg-gray-700/80 p-2.5 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-300">
         </div>
 
         <div class="col-span-1 md:col-span-2">
           <label for="delivery_schedule" class="block mb-2 text-sm font-medium text-gray-300">Horario de Entrega</label>
-          <input type="text" id="delivery_schedule" [(ngModel)]="provider.delivery_schedule" name="delivery_schedule" placeholder="Ej: 9:00 - 17:00" class="w-full bg-gray-700 p-2.5 rounded-lg border border-gray-600">
+          <input type="text" id="delivery_schedule" [(ngModel)]="provider.delivery_schedule" name="delivery_schedule" placeholder="Ej: 9:00 - 17:00" class="w-full bg-gray-700/80 p-2.5 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-300">
         </div>
         <div class="col-span-1 md:col-span-2">
           <label class="block mb-2 text-sm font-medium text-gray-300">Días de Entrega</label>
           <div class="flex flex-wrap gap-x-4 gap-y-2 mt-2">
             @for(day of dayKeys; track day) {
               <label class="flex items-center space-x-2 cursor-pointer">
-                <input type="checkbox" [(ngModel)]="deliveryDays[day]" [name]="day" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-600">
+                <input type="checkbox" [(ngModel)]="deliveryDays[day]" [name]="day" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-offset-gray-800">
                 <span class="capitalize text-gray-300">{{day}}</span>
               </label>
             }
@@ -43,9 +43,9 @@
         </div>
       </div>
 
-      <div class="flex justify-end mt-8 space-x-4">
+      <div class="flex justify-end mt-8 space-x-4 border-t border-gray-700 pt-6">
         <button type="button" (click)="close.emit()" class="px-5 py-2.5 rounded-lg bg-gray-600 hover:bg-gray-500 font-medium transition-colors">Cancelar</button>
-        <button type="submit" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 font-medium transition-colors">Guardar</button>
+        <button type="submit" class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 font-medium transition-colors transform hover:scale-105">Guardar</button>
       </div>
     </form>
   </div>

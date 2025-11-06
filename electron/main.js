@@ -3,14 +3,15 @@ const path = require('path');
 const url = require('url');
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
-const http = require('http');
-const { Server } = require("socket.io"); 
 
 // --- 1. CONFIGURACIÓN DE VARIABLES DE ENTORNO (DEBE SER LO PRIMERO) ---
 const dotenvPath = app.isPackaged
   ? path.join(process.resourcesPath, '.env')
   : path.join(__dirname, '../.env');
 require('dotenv').config({ path: dotenvPath });
+
+const http = require('http');
+const { Server } = require("socket.io"); 
 
 // --- Capturador Global de Errores de Promesa ---
 process.on('unhandledRejection', (reason, promise) => {
@@ -37,7 +38,7 @@ log.info('Iniciando aplicación...');
 
 const express = require('express');
 const cors = require('cors');
-const { isAdmin } = require('../backend/middleware/auth.middleware');
+const { checkRole } = require('../backend/middleware/auth.middleware');
 const providersRoutes = require('../backend/routes/providers.routes'); 
 const productsRoutes = require('../backend/routes/products.routes'); 
 const authRoutes = require('../backend/routes/auth.routes');
@@ -51,6 +52,7 @@ const assetsRoutes = require('../backend/routes/assets.routes');
 const assetMovementsRoutes = require('../backend/routes/asset-movements.routes'); 
 const chatRoutes = require('../backend/routes/chat.routes');
 const tasksRoutes = require('../backend/routes/tasks.routes'); // <-- NUEVA LÍNEA
+const dishesRoutes = require('../backend/routes/dishes.routes'); // Corregido
 
 let mainWindow;
 
@@ -103,19 +105,20 @@ async function startServer() {
         backendApp.use(express.static(path.join(__dirname, '../dist/browser')));
     }
 
-    backendApp.use('/api/providers', providersRoutes);
-    backendApp.use('/api/products', productsRoutes);
+    backendApp.use('/api/providers', checkRole, providersRoutes);
+    backendApp.use('/api/products', checkRole, productsRoutes);
     backendApp.use('/api/auth', authRoutes);
-    backendApp.use('/api/receptions', receptionsRoutes); 
-    backendApp.use('/api/dashboard', dashboardRoutes);
-    backendApp.use('/api/inventory', inventoryRoutes); 
-    backendApp.use('/api/reports', reportsRoutes); 
-    backendApp.use('/api/entities', entitiesRoutes);
-    backendApp.use('/api/analysis', analysisRoutes);
-    backendApp.use('/api/assets', isAdmin, assetsRoutes);
-    backendApp.use('/api/asset-movements', assetMovementsRoutes); 
-    backendApp.use('/api/chat', chatRoutes); // <-- Habilitamos la API del chat de nuevo
-    backendApp.use('/api/tasks', tasksRoutes); // <-- NUEVA LÍNEA
+    backendApp.use('/api/receptions', checkRole, receptionsRoutes); 
+    backendApp.use('/api/dashboard', checkRole, dashboardRoutes);
+    backendApp.use('/api/inventory', checkRole, inventoryRoutes); 
+    backendApp.use('/api/reports', checkRole, reportsRoutes); 
+    backendApp.use('/api/entities', checkRole, entitiesRoutes);
+    backendApp.use('/api/analysis', checkRole, analysisRoutes);
+    backendApp.use('/api/assets', checkRole, assetsRoutes);
+    backendApp.use('/api/asset-movements', checkRole, assetMovementsRoutes); 
+    backendApp.use('/api/chat', checkRole, chatRoutes);
+    backendApp.use('/api/tasks', checkRole, tasksRoutes);
+    backendApp.use('/api/dishes', checkRole, dishesRoutes);
 
     // --- Global Error Handler ---
     backendApp.use((err, req, res, next) => {
@@ -222,7 +225,9 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-    if (mainWindow === null) {
+    // En macOS, es común volver a crear una ventana en la aplicación cuando
+    // el icono del dock se pulsa y no hay otras ventanas abiertas.
+    if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
     }
 });

@@ -1,9 +1,12 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { ProductsService } from '../../services/products.service';
 import { ProductFormComponent } from '../../components/product-form/product-form.component';
-import { AuthService } from '../../services/auth.service'; 
+import { AuthService } from '../../services/auth.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-products',
@@ -11,7 +14,7 @@ import { AuthService } from '../../services/auth.service';
   imports: [CommonModule, ProductFormComponent, FormsModule],
   templateUrl: './products.component.html',
 })
-export class ProductsComponent implements OnInit {
+export class ProductsComponent implements OnInit, OnDestroy {
   products: any[] = [];
   isModalOpen = false;
   currentProduct: any = {};
@@ -20,24 +23,34 @@ export class ProductsComponent implements OnInit {
   currentPage: number = 1;
   itemsPerPage: number = 15;
   totalItems: number = 0;
-
+  
   searchTerm: string = '';
+  // --- NUEVO: Lógica para Debouncing ---
+  private searchSubject = new Subject<string>();
+  private searchSubscription!: Subscription;
+  // ------------------------------------
 
   constructor(
     private productsService: ProductsService,
     private cdr: ChangeDetectorRef,
-    private authService: AuthService 
+    private authService: AuthService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
-    this.loadProducts();
-  }
+    this.loadProducts(); // Carga inicial de productos
 
-  loadProducts(): void {
-    this.productsService.getProducts(
-      this.currentPage, 
-      this.itemsPerPage,
-      this.searchTerm
+    // --- NUEVO: Configuración del Debouncer ---
+    this.searchSubscription = this.searchSubject.pipe(
+      // 1. Espera 400ms después de la última pulsación de tecla
+      debounceTime(400),
+      // 2. Solo emite si el texto de búsqueda ha cambiado realmente
+      distinctUntilChanged(),
+      // 3. Cancela la búsqueda anterior y lanza una nueva
+      switchMap((term: string) => {
+        this.currentPage = 1; // Resetea a la página 1 en cada nueva búsqueda
+        return this.productsService.getProducts(this.currentPage, this.itemsPerPage, term);
+      })
     ).subscribe(response => {
       this.products = response.data;
       this.totalItems = response.total;
@@ -45,14 +58,30 @@ export class ProductsComponent implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    // Limpieza de la suscripción para evitar fugas de memoria
+    this.searchSubscription.unsubscribe();
+  }
+
+  loadProducts(): void {
+    this.productsService.getProducts(this.currentPage, this.itemsPerPage, this.searchTerm).subscribe(response => {
+      this.products = response.data;
+      this.totalItems = response.total;
+      this.cdr.detectChanges();
+    });
+  }
+
   onSearchChange(): void {
-    this.currentPage = 1;
-    this.loadProducts();
+    // En lugar de llamar a loadProducts() directamente,
+    // emitimos el nuevo término al Subject. RxJS se encarga del resto.
+    this.searchSubject.next(this.searchTerm);
   }
 
   goToPage(page: number): void {
-    this.currentPage = page;
-    this.loadProducts();
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.loadProducts();
+    }
   }
 
   get totalPages(): number {
@@ -86,15 +115,16 @@ export class ProductsComponent implements OnInit {
       : this.productsService.createProduct(product);
 
     operation.subscribe(() => {
+      this.notificationService.showSuccess(`Producto ${product.id ? 'actualizado' : 'creado'} correctamente.`);
       this.closeModal();
       this.loadProducts();
     });
   }
 
-
   deleteProduct(productId: number): void {
     if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
       this.productsService.deleteProduct(productId).subscribe(() => {
+        this.notificationService.showSuccess('Producto eliminado correctamente.');
         this.loadProducts();
       });
     }

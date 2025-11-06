@@ -1,52 +1,59 @@
-<div class="flex items-center justify-center min-h-screen">
-    <div class="w-full max-w-md p-8 space-y-8 bg-gray-800 rounded-2xl shadow-lg">
-      <div class="text-center">
-        <svg class="w-12 h-12 mx-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
-        <h2 class="mt-6 text-3xl font-extrabold text-white">
-          Iniciar Sesión
-        </h2>
-        <p class="mt-2 text-sm text-gray-400">
-          Gestor de Inventario
-        </p>
-      </div>
-  
-      <form class="mt-8 space-y-6" (ngSubmit)="onLogin()">
-        <div class="flex flex-col gap-4 rounded-md">
-          <div>
-            <label for="email" class="sr-only">Correo Electrónico</label>
-            <input 
-              id="email" 
-              name="email" 
-              type="email" 
-              required
-              class="w-full px-4 py-3 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none" 
-              placeholder="Correo Electrónico"
-              [(ngModel)]="credentials.email">
-          </div>
-          <div>
-            <label for="password" class="sr-only">Contraseña</label>
-            <input 
-              id="password" 
-              name="password" 
-              type="password" 
-              required
-              class="w-full px-4 py-3 text-gray-200 bg-gray-700 border border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 focus:outline-none" 
-              placeholder="Contraseña"
-              [(ngModel)]="credentials.password">
-          </div>
-        </div>
-  
-        <div>
-          <button type="submit" class="w-full py-3 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-500 transition-colors duration-300">
-            Ingresar
-          </button>
-        </div>
-      </form>
-      
-      @if (errorMessage) {
-        <div class="px-4 py-3 mt-4 text-center text-red-200 bg-red-900 bg-opacity-50 rounded-lg">
-          {{ errorMessage }}
-        </div>
-      }
+<!-- Contenedor principal con el fondo animado -->
+<div class="flex items-center justify-center min-h-screen bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900"
+     style="background-size: 400% 400%; animation: gradient-animation 15s ease infinite;">
+
+  <!-- Tarjeta de login con efecto de vidrio y animación de entrada -->
+  <div class="w-full max-w-md p-8 space-y-8 bg-gray-800/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-700"
+       style="animation: fade-in-up 0.8s ease-out forwards;">
+    
+    <div class="text-center">
+      <svg class="w-12 h-12 mx-auto text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+      <h2 class="mt-6 text-3xl font-extrabold text-white">
+        Iniciar Sesión
+      </h2>
+      <p class="mt-2 text-sm text-gray-400">
+        Gestor de Inventario
+      </p>
     </div>
+
+    <form class="mt-8 space-y-6" (ngSubmit)="onLogin()">
+      <div class="flex flex-col gap-4 rounded-md">
+        <div>
+          <label for="email" class="sr-only">Correo Electrónico</label>
+          <input 
+            id="email" 
+            name="email" 
+            type="email" 
+            required
+            class="w-full px-4 py-3 text-gray-200 bg-gray-700/80 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-300" 
+            placeholder="Correo Electrónico"
+            [(ngModel)]="credentials.email">
+        </div>
+        <div>
+          <label for="password" class="sr-only">Contraseña</label>
+          <input 
+            id="password" 
+            name="password" 
+            type="password" 
+            required
+            class="w-full px-4 py-3 text-gray-200 bg-gray-700/80 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-300" 
+            placeholder="Contraseña"
+            [(ngModel)]="credentials.password">
+        </div>
+      </div>
+
+      <div>
+        <button type="submit" class="w-full py-3 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-500 transition-all duration-300 transform hover:scale-105">
+          Ingresar
+        </button>
+      </div>
+    </form>
+    
+    @if (errorMessage) {
+      <div class="px-4 py-3 mt-4 text-center text-red-200 bg-red-900/70 rounded-lg border border-red-800"
+           style="animation: fade-in 0.5s ease-out forwards;">
+        {{ errorMessage }}
+      </div>
+    }
   </div>
+</div>

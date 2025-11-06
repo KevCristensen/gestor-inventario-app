@@ -1,11 +1,12 @@
-<div class="text-white">
+<!-- Contenedor principal con animación de entrada -->
+<div class="text-white" style="animation: fade-in-up 0.7s ease-out forwards;">
   <h1 class="text-3xl font-bold mb-6">Reportes</h1>
 
   <!-- Pestañas para seleccionar el tipo de reporte -->
   <div class="flex border-b border-gray-700 mb-6">
     <button 
       (click)="reportType = 'consumption'; loadData()"
-      [ngClass]="{'border-blue-500 text-blue-400': reportType === 'consumption', 'border-transparent text-gray-400 hover:text-white': reportType !== 'consumption'}"
+      [ngClass]="{'border-blue-500 text-white': reportType === 'consumption', 'border-transparent text-gray-400 hover:text-white': reportType !== 'consumption'}"
       class="py-3 px-6 font-semibold border-b-2 transition-colors">
       Análisis de Consumo
     </button>
@@ -18,7 +19,7 @@
   </div>
 
   <!-- Filtros -->
-  <div class="bg-gray-800 p-4 rounded-lg mb-6">
+  <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-4 rounded-xl mb-6">
     <div class="flex flex-wrap items-end gap-4">
       <div class="flex items-center gap-2">
         <button (click)="setPeriod('today')" class="bg-gray-700 hover:bg-gray-600 text-sm py-2 px-3 rounded-lg">Hoy</button>
@@ -53,14 +54,14 @@
 
   <!-- Contenido del Reporte -->
   @if (isLoading) {
-    <div class="bg-gray-800 rounded-lg shadow p-8 text-center text-gray-500">Cargando...</div>
+    <div class="bg-gray-800/50 rounded-xl shadow p-8 text-center text-gray-500 border border-dashed border-gray-700">Cargando...</div>
   } @else {
     <!-- Pestaña: Análisis de Consumo -->
     @if (reportType === 'consumption') {
-      <div class="bg-gray-800 rounded-lg shadow p-6">
+      <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-700/50">
         <table class="w-full text-left">
           <thead class="border-b border-gray-600">
-            <tr>
+            <tr class="text-sm text-gray-400">
               <th class="p-4">Producto</th>
               <th class="p-4">Bodega</th>
               <th class="p-4 text-right">Total Salidas</th>
@@ -69,7 +70,7 @@
           </thead>
           <tbody>
             @for (item of consumptionData; track $index) {
-              <tr class="border-b border-gray-700">
+              <tr class="border-b border-gray-700/50 hover:bg-gray-700/40 transition-colors duration-200">
                 <td class="p-4">{{ item.productName }}</td>
                 <td class="p-4 text-gray-400">{{ item.entityName }}</td>
                 <td class="p-4 text-right font-mono text-xl">{{ item.totalExits }}</td>
@@ -93,8 +94,9 @@
     @if (reportType === 'consolidated_exit') {
       @if (exitGroups.length > 0) {
         <div class="space-y-6">
-          @for (group of exitGroups; track $index) {
-            <div class="bg-gray-800 rounded-lg shadow p-6">
+          @for (group of exitGroups; track $index; let i = $index) {
+            <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-700/50 opacity-0"
+                 style="animation: card-enter 0.5s ease-out forwards; animation-delay: {{ i * 100 }}ms;">
               <div class="flex justify-between items-start mb-4 border-b border-gray-700 pb-3">
                 <div>
                   <h2 class="text-xl font-bold text-blue-400">{{ group.notes || 'Salida sin motivo' }}</h2>
@@ -114,7 +116,7 @@
           }
         </div>
       } @else {
-        <div class="bg-gray-800 rounded-lg shadow p-8 text-center text-gray-500">No se encontraron salidas para el período seleccionado.</div>
+        <div class="bg-gray-800/50 rounded-xl shadow p-8 text-center text-gray-500 border border-dashed border-gray-700">No se encontraron salidas para el período seleccionado.</div>
       }
     }
   }
