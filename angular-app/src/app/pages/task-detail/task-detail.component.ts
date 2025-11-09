@@ -129,9 +129,14 @@ export class TaskDetailComponent implements OnInit {
         const reqProduct = this.task.requiredProducts.find((p: any) => p.name === requiredProductName);
         if (reqProduct) {
           reqProduct.chosen_product_id = chosenProductId;
-          // Si quitamos la selección, también limpiamos el objeto `chosenProduct` si existe.
+          
+          // --- LÓGICA MEJORADA ---
+          // Actualizamos también el objeto `chosenProduct` para que la impresión funcione al instante.
           if (chosenProductId === null) {
             reqProduct.chosenProduct = null;
+          } else {
+            // Buscamos la sugerencia elegida para obtener todos sus detalles.
+            reqProduct.chosenProduct = reqProduct.suggestions.find((s: any) => s.id === chosenProductId);
           }
         }
         this.updatingRequirement = null; // Finaliza el estado de carga

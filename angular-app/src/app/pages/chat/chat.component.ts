@@ -1,33 +1,37 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ChatService } from '../../services/chat.service';
-import { AuthService } from '../../services/auth.service';
+import { AuthService, User } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
-import { EntitiesService } from '../../services/entities.service'; // Importamos el servicio de entidades
+import { EntitiesService } from '../../services/entities.service';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './chat.component.html',
+  // --- ¡LA SOLUCIÓN ESTÁ AQUÍ! ---
+  host: {
+    // Le decimos al componente que se comporte como un item flex que puede crecer.
+    // Esto hace que <app-chat> ocupe todo el espacio vertical disponible.
+    class: 'flex flex-grow'
+  }
 })
-export class ChatComponent implements OnInit, OnDestroy {
-  conversations: { [key: string]: any[] } = {};
-  groupedUsers: { [entityName: string]: any[] } = {}; 
-  newMessage: string = '';
-  currentUser: any;
+export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('messageContainer') private messageContainer!: ElementRef;
 
-  onlineUserIds: Set<string> = new Set();
+  users: any[] = [];
+  selectedUser: any = null;
+  messages: any[] = [];
+  newMessage: string = '';
+  currentUser: User | null;
+  onlineUserIds: string[] = [];
 
-  private notificationSound = new Audio('assets/audio/notification.mp3');
-  
-  selectedUserId: number | null = null;
-  selectedUserName: string = '';
-
-  private subscriptions = new Subscription();
+  // Suscripciones para una limpieza adecuada
+  private onlineUsersSub!: Subscription;
+  private newMessageSub!: Subscription;
 
   constructor(
     private chatService: ChatService,
@@ -35,139 +39,101 @@ export class ChatComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private entitiesService: EntitiesService, // Inyectamos el servicio
     private cdr: ChangeDetectorRef
-  ) {}
+  ) {
+    this.currentUser = this.authService.getCurrentUser();
+  }
+
+  ngAfterViewChecked(): void {
+    // Cada vez que se actualice la vista, hacemos scroll hacia abajo
+    this.scrollToBottom();
+  }
 
   ngOnInit(): void {
-    this.currentUser = this.authService.getCurrentUser();
     this.chatService.connect();
-    
-    this.loadUsersAndGroupThem();
+    this.loadUsers();
 
-    this.subscriptions.add(this.chatService.onlineUsers$.subscribe(ids => {
-      this.onlineUserIds = new Set(ids);
-      this.cdr.detectChanges(); // Forzar la detección de cambios
-    }));
-
-    this.subscriptions.add(this.chatService.onNewMessage().subscribe((message: any) => {
-      const otherUserId = message.from_user_id === this.currentUser.id ? message.to_user_id : message.from_user_id;
-      if (!this.conversations[otherUserId]) {
-        this.conversations[otherUserId] = [];
-      }
-      this.conversations[otherUserId].push(message);
-
-      // Si el mensaje recibido es para la conversación activa, lo marcamos como leído
-      if (message.from_user_id === this.selectedUserId) {
-        this.markConversationAsRead(this.currentUser.id, message.from_user_id);
-      } else {
-        // Si no, actualizamos el contador de no leídos
-        this.chatService.fetchUnreadCount();
-      }
-      if (message.from_user_id !== this.currentUser.id && this.selectedUserId !== message.from_user_id) {
-        this.notificationSound.play();
-      }
+    // Escuchamos la lista de usuarios en línea en tiempo real
+    this.onlineUsersSub = this.chatService.onlineUsers$.subscribe(userIds => {
+      this.onlineUserIds = userIds;
       this.cdr.detectChanges();
-      this.scrollToBottom();
-    }));
+    });
+
+    // --- ¡LA MAGIA DEL TIEMPO REAL! ---
+    // Escuchamos los nuevos mensajes que llegan por el socket.
+    this.newMessageSub = this.chatService.onNewMessage().subscribe((message: any) => {
+      // Si el mensaje recibido es de la conversación que tenemos abierta...
+      if (this.selectedUser && message.from_user_id === this.selectedUser.id) {
+        this.messages.push(message);
+        this.cdr.detectChanges();
+        // Podríamos añadir una llamada para marcarlo como leído aquí
+      } else {
+        // Si es de otra conversación, actualizamos el contador de no leídos
+        this.chatService.fetchUnreadCount();
+        // Opcional: mostrar una notificación
+        this.notificationService.showInfo(`Nuevo mensaje de ${message.user_name}`, 'Chat');
+      } 
+    });
   }
 
   ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
+    // Limpiamos las suscripciones y desconectamos el socket al salir del componente
+    this.onlineUsersSub?.unsubscribe();
+    this.newMessageSub?.unsubscribe();
     this.chatService.disconnect();
   }
 
-  loadUsersAndGroupThem(): void {
-    // Primero obtenemos todas las entidades (colegios)
-    this.entitiesService.getEntities().subscribe(entities => {
-      // Luego obtenemos todos los usuarios
-      this.chatService.getUsers().subscribe(users => {
-        const grouped: { [key: string]: any[] } = {};
-        entities.forEach((entity: any) => {
-          // Para cada colegio, filtramos los usuarios que le pertenecen
-          const entityUsers = users.filter(u => u.entity_id === entity.id && u.id !== this.currentUser.id);
-          if (entityUsers.length > 0) {
-            grouped[entity.name] = entityUsers;
-          }
-        });
-        this.groupedUsers = grouped;
-        this.cdr.detectChanges();
-      });
+  loadUsers(): void {
+    this.chatService.getUsers().subscribe(users => {
+      this.users = users.filter(u => u.id !== this.currentUser?.id);
+      this.cdr.detectChanges(); // Forzamos la actualización de la vista
     });
   }
 
   selectUser(user: any): void {
-    this.selectedUserId = user.id;
-    this.selectedUserName = user.name;
-    if (!this.conversations[user.id]) {
-      this.conversations[user.id] = []; // Inicializa para evitar nulls
+    this.selectedUser = user;
+    this.messages = []; // Limpiamos los mensajes anteriores
+    if (this.currentUser?.id) { // Aseguramos que currentUser y su ID existan
       this.chatService.getConversation(this.currentUser.id, user.id).subscribe(messages => {
-        this.conversations[user.id] = messages;
-        this.markConversationAsRead(this.currentUser.id, user.id);
+        this.messages = messages;
         this.cdr.detectChanges();
-        this.scrollToBottom();
       });
-    } else {
-      // Si ya existía, igual marcamos como leída y actualizamos contadores
-      this.markConversationAsRead(this.currentUser.id, user.id);
-      this.scrollToBottom(); // Y si la conversación ya existía
     }
-  }
-  markConversationAsRead(userId: number, otherUserId: number) {
-    this.chatService.markAsRead(userId, otherUserId).subscribe(() => {
-      this.chatService.fetchUnreadCount(); // Actualiza el contador global
-    });
   }
 
   sendMessage(): void {
-    if (this.newMessage.trim() === '' || !this.selectedUserId) return;
-    
+    if (!this.newMessage.trim() || !this.selectedUser || !this.currentUser?.id) return; // Aseguramos que currentUser y su ID existan
+
     const messageData = {
       from_user_id: this.currentUser.id,
-      to_user_id: this.selectedUserId,
-      message_text: this.newMessage,
+      to_user_id: this.selectedUser.id,
+      content: this.newMessage,
+      entity_id: this.currentUser.entity_id,
+      // Añadimos datos extra para la actualización optimista
       user_name: this.currentUser.name,
-      created_at: new Date().toISOString() // Añadimos la fecha para la vista local
+      created_at: new Date().toISOString()
     };
 
-    // Añade el mensaje localmente de inmediato para una mejor experiencia
-    if (!this.conversations[this.selectedUserId]) {
-      this.conversations[this.selectedUserId] = [];
-    }
-    this.conversations[this.selectedUserId].push(messageData);
-    this.scrollToBottom();
-    this.cdr.detectChanges();
+    // Actualización optimista: añadimos el mensaje a la UI inmediatamente
+    this.messages.push(messageData);
 
-    // Luego, envía el mensaje al servidor en segundo plano
+    // Enviamos el mensaje a través del servicio (que usa sockets y API)
     this.chatService.sendMessage(messageData).subscribe({
-      error: () => {
-        this.notificationService.showError('No se pudo enviar el mensaje.');
-        // Opcional: podrías añadir una lógica para marcar el mensaje como "no enviado"
-      }
+      error: () => this.notificationService.showError('No se pudo enviar el mensaje.')
     });
 
-    this.newMessage = '';
+    this.newMessage = ''; // Limpiamos el input
+    this.cdr.detectChanges();
   }
 
-  get currentMessages(): any[] {
-    return this.selectedUserId ? this.conversations[this.selectedUserId] || [] : [];
-  }
-
-  getObjectKeys(obj: any) {
-    return Object.keys(obj);
-  }
-
-  isOnline(userId: number): boolean {
-    return this.onlineUserIds.has(userId.toString());
+  isUserOnline(userId: number): boolean {
+    return this.onlineUserIds.includes(userId.toString());
   }
 
   scrollToBottom(): void {
-    // Usamos un pequeño timeout para asegurar que el DOM se haya actualizado
     setTimeout(() => {
       try {
         this.messageContainer.nativeElement.scrollTop = this.messageContainer.nativeElement.scrollHeight;
-      } catch (err) { 
-        console.error("Error al hacer scroll:", err);
-      }
+      } catch(err) { }
     }, 0);
   }
-
 }

@@ -51,7 +51,7 @@ const analysisRoutes = require('../backend/routes/analysis.routes');
 const assetsRoutes = require('../backend/routes/assets.routes');
 const assetMovementsRoutes = require('../backend/routes/asset-movements.routes'); 
 const chatRoutes = require('../backend/routes/chat.routes');
-const tasksRoutes = require('../backend/routes/tasks.routes'); // <-- NUEVA LÍNEA
+const tasksRoutes = require('../backend/routes/tasks.routes');
 const dishesRoutes = require('../backend/routes/dishes.routes'); // Corregido
 
 let mainWindow;

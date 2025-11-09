@@ -5,23 +5,25 @@ import { EntitiesService } from '../../services/entities.service';
 import { ConnectionService } from '../../services/connection.service';
 import { Observable, filter, switchMap, of, catchError, map } from 'rxjs';
 import { CommonModule } from '@angular/common'; 
-import { FormsModule } from '@angular/forms'; // <-- Importar FormsModule
+import { FormsModule } from '@angular/forms';
 import { ChatService } from '../../services/chat.service'; 
+import { ChatUiService } from '../../services/chat-ui.service';
+import { ChatComponent } from '../../pages/chat/chat.component'; // <-- NUEVO
 
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive], // <-- Añadir FormsModule aquí
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, ChatComponent], // <-- AÑADIR ChatComponent
   templateUrl: './layout.component.html',
 })
 export class LayoutComponent implements OnInit {
-  userRole: string | null = null;
   currentUser$: Observable<User | null>;
   isOnline$: Observable<boolean>;
   entityName$: Observable<string>;
   isSidebarCollapsed = false; // Estado para el menú lateral
   unreadChatMessages$: Observable<number>; // Nueva propiedad
+  isChatOpen$: Observable<boolean>; // <-- NUEVO
 
 
   constructor(
@@ -30,16 +32,17 @@ export class LayoutComponent implements OnInit {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private connectionService: ConnectionService,
-    private chatService: ChatService
+    private chatService: ChatService,
+    public chatUiService: ChatUiService // <-- NUEVO (público para usar en la plantilla)
   ) {
     this.currentUser$ = this.authService.currentUser;
     this.isOnline$ = this.connectionService.isOnline$;
     this.unreadChatMessages$ = this.chatService.unreadCount$;
+    this.isChatOpen$ = this.chatUiService.isChatOpen$;
 
     this.entityName$ = this.currentUser$.pipe(
       filter((user): user is User => !!user), // Aseguramos que el usuario no sea null
       switchMap(user => {
-        this.userRole = user.role; // Podemos seguir asignando esto si se usa en otro lado
         this.chatService.fetchUnreadCount();
         return this.entitiesService.getEntityById(user.entity_id).pipe(
           catchError(err => {

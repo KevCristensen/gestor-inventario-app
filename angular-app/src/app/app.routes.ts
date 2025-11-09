@@ -38,7 +38,7 @@ export const routes: Routes = [
             { path: 'tasks', component: TasksComponent }, // <-- NUEVA LÍNEA
             { path: 'tasks/:id', component: TaskDetailComponent }, // <-- NUEVA LÍNEA
             { path: 'loss-damage-report', component: LossDamageReportComponent },
-            { path: 'chat', component: ChatComponent }, 
+            // { path: 'chat', component: ChatComponent }, 
             { path: 'assets', component: AssetsComponent },
             { path: 'dishes', component: DishesComponent, canActivate: [authGuard, adminGuard] }, // Nueva ruta
             { path: 'asset-movements', component: AssetMovementsComponent },

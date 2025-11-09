@@ -1,68 +1,98 @@
+<!-- Contenedor principal con animación de entrada -->
+<div class="flex flex-grow h-full text-white" style="animation: fade-in-up 0.7s ease-out forwards;">
 
-<div class="text-white flex h-[calc(100vh-80px)]">
-    <!-- Columna de Usuarios -->
-    <aside class="w-1/4 bg-gray-800 p-4 flex flex-col">
-      <h2 class="text-lg font-bold mb-4">Contactos</h2>
-      <div class="overflow-y-auto">
-        <!-- Lista desplegable por colegio -->
-        @for(entityName of getObjectKeys(groupedUsers); track entityName) {
-          <details class="group" open>
-            <summary class="p-2 rounded-lg cursor-pointer hover:bg-gray-700 font-semibold list-none">
-              {{ entityName }}
-            </summary>
-            <div class="pl-4">
-              @for(user of groupedUsers[entityName]; track user.id) {
-                <a (click)="selectUser(user)" 
-                   class="w-full flex items-center p-2 rounded-lg cursor-pointer transition-colors"
-                   [ngClass]="{'bg-blue-600': selectedUserId === user.id, 'hover:bg-gray-700': selectedUserId !== user.id}">
-                  <!-- El punto de estado (verde/gris) -->
-                  <span class="status-dot" [class.online]="isOnline(user.id)"></span>
-                  
-                  <span>{{ user.name }}</span>
-                </a>
-              }
+  <!-- Columna Izquierda: Lista de Usuarios -->
+  <div class="w-1/3 flex flex-col bg-gray-800/50 backdrop-blur-sm border-r border-gray-700/50 overflow-hidden">
+    <div class="p-4 border-b border-gray-700/50">
+      <h2 class="text-xl font-bold">Chats</h2>
+      <!-- Podríamos añadir un buscador de usuarios aquí en el futuro -->
+    </div>
+    <div class="flex-grow overflow-y-auto h-0">
+      @for(user of users; track user.id) {
+        <div (click)="selectUser(user)" 
+             class="flex items-center p-4 cursor-pointer transition-colors duration-200 border-b border-gray-700/50"
+             [ngClass]="{'bg-blue-600/30': selectedUser?.id === user.id, 'hover:bg-gray-700/50': selectedUser?.id !== user.id}">
+          
+          <div class="relative mr-4">
+            <div class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center font-bold text-lg">
+              {{ user.name ? user.name.charAt(0) : '?' }}
             </div>
-          </details>
-        }
-      </div>
-    </aside>
-  
-    <!-- Columna Principal del Chat -->
-    <main class="w-3/4 flex flex-col p-4">
-      @if (selectedUserId) {
-        <header class="border-b border-gray-700 pb-2 mb-4">
-          <h2 class="text-xl font-bold">{{ selectedUserName }}</h2>
-        </header>
-  
-        <div class="flex-grow overflow-y-auto mb-4" #messageContainer>
-          @for(msg of currentMessages; track (msg.id || msg.created_at)) {
-            <div class="mb-4" [ngClass]="{'text-right': msg.from_user_id === currentUser.id}">
-              <div class="inline-block p-3 rounded-lg max-w-lg text-left" 
-                  [ngClass]="{'bg-blue-600': msg.from_user_id === currentUser.id, 'bg-gray-700': msg.from_user_id !== currentUser.id}">
-                <p class="text-xs font-bold text-gray-400">{{ msg.user_name }} - {{ msg.created_at | date:'shortTime' }}</p>
-                <p>{{ msg.message_text }}</p>
+            @if (isUserOnline(user.id)) {
+              <span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-400 ring-2 ring-gray-800"></span>
+            }
+          </div>
+          
+          <div class="flex-grow">
+            <div class="flex justify-between">
+              <h3 class="font-semibold">{{ user.name }}</h3>
+              <!-- <span class="text-xs text-gray-400">10:30 AM</span> -->
+            </div>
+            <p class="text-sm text-gray-400 truncate">{{ user.role }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Columna Derecha: Conversación -->
+  <div class="w-2/3 flex flex-col bg-gray-900/70 overflow-hidden">
+    @if (selectedUser) {
+      <!-- Cabecera de la Conversación -->
+      <div class="flex items-center p-4 border-b border-gray-700/50 bg-gray-800/50">
+        <div class="relative mr-4">
+          <div class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center font-bold text-lg">
+            {{ selectedUser.name ? selectedUser.name.charAt(0) : '?' }}
+          </div>
+          @if (isUserOnline(selectedUser.id)) {
+            <span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-400 ring-2 ring-gray-800"></span>
+          }
+        </div>
+        <div>
+          <h3 class="font-semibold text-lg">{{ selectedUser.name }}</h3>
+          <p class="text-sm" [ngClass]="isUserOnline(selectedUser.id) ? 'text-green-400' : 'text-gray-500'">
+            {{ isUserOnline(selectedUser.id) ? 'En línea' : 'Desconectado' }}
+          </p>
+        </div>      </div>
+
+      <!-- Contenedor de Mensajes -->
+      <div #messageContainer class="flex-grow p-6 overflow-y-auto h-0">
+        <div class="space-y-4">
+          @for(message of messages; track message.id || message.created_at) {
+            <div class="flex" [ngClass]="{'justify-end': message.from_user_id === currentUser?.id, 'justify-start': message.from_user_id !== currentUser?.id}">
+              <div class="max-w-lg">
+                <div class="px-4 py-2 rounded-2xl" [ngClass]="{
+                  'bg-blue-600 rounded-br-none': message.from_user_id === currentUser?.id, 
+                  'bg-gray-700 rounded-bl-none': message.from_user_id !== currentUser?.id
+                }">
+                  <p>{{ message.content }}</p>
+                </div>
+                <span class="text-xs text-gray-500 mt-1 px-2 block">{{ message.created_at | date:'shortTime' }}</span>
               </div>
             </div>
           }
         </div>
-  
-        <form (ngSubmit)="sendMessage()" class="flex gap-4">
-          <input 
-            type="text" 
-            [(ngModel)]="newMessage"
-            name="newMessage"
-            placeholder="Escribe un mensaje..."
-            class="flex-grow bg-gray-700 p-3 rounded-lg border border-gray-600"
-          >
-          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
-            Enviar
-          </button>
+      </div>
+    } @else {
+      <!-- Vista cuando no hay chat seleccionado -->
+      <div class="flex-grow flex flex-col items-center justify-center text-gray-500">
+        <svg class="w-24 h-24 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+        <h3 class="text-xl font-semibold">Tu Gestor de Chat</h3>
+        <p>Selecciona una conversación para empezar.</p>
+      </div>
+    }
+
+    <!-- Input para Enviar Mensaje -->
+    @if (selectedUser) {
+      <div class="p-4 bg-gray-800/50 border-t border-gray-700/50">
+        <form (ngSubmit)="sendMessage()">
+          <div class="flex items-center">
+            <input type="text" [(ngModel)]="newMessage" name="newMessage" placeholder="Escribe un mensaje..." class="w-full bg-gray-700/80 p-3 rounded-full border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-300 pl-5">
+            <button type="submit" [disabled]="!newMessage.trim()" class="ml-4 p-3 rounded-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors transform hover:scale-110">
+              <svg class="w-6 h-6 transform rotate-90" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.428A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
+            </button>
+          </div>
         </form>
-      } @else {
-        <div class="flex items-center justify-center h-full">
-          <p class="text-gray-500">Selecciona un usuario para comenzar a chatear.</p>
-        </div>
-      }
-    </main>
+      </div>
+    } <!-- Cierre del @if (selectedUser) principal -->
   </div>
-  
+</div>

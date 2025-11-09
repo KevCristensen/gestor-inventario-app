@@ -1,18 +1,19 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { AuthService } from './auth.service';
-import { environment } from '../../environments/environment'; // 1. Usar variables de entorno
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
   private socket!: Socket;
-  private apiUrl = `${environment.apiUrl}/api/chat`;
 
-  // Unificamos el nombre para que coincida con el componente (unreadCount$)
+  // Mantenemos el nombre de la API URL para claridad
+  private chatApiUrl = `${environment.apiUrl}/api/chat`;
+
   private unreadCountSubject = new BehaviorSubject<number>(0);
   public unreadCount$ = this.unreadCountSubject.asObservable();
 
@@ -26,10 +27,7 @@ export class ChatService {
 
   // --- Conexión de Socket.IO ---
   connect(): void {
-    // 2. Si ya existe un socket, no hacemos nada.
-    if (this.socket) {
-      return;
-    }
+    if (this.socket?.connected) return;
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) return;
@@ -37,7 +35,6 @@ export class ChatService {
     // Conectamos al servidor de Socket.IO que corre en Electron
     this.socket = io(environment.apiUrl);
 
-    // 3. Movemos toda la lógica de listeners a la conexión
     this.socket.on('connect', () => {
       console.log('Conectado al servidor de chat con ID:', this.socket.id);
       // Informamos al servidor que estamos en línea
@@ -56,43 +53,41 @@ export class ChatService {
   fetchUnreadCount(): void {
     const user = this.authService.getCurrentUser();
     if (user) {
-      this.http.get<{ count: number }>(`${this.apiUrl}/unread-count/${user.id}`).subscribe(res => {
+      this.http.get<{ count: number }>(`${this.chatApiUrl}/unread-count/${user.id}`).subscribe(res => {
         this.unreadCountSubject.next(res.count);
       });
     }
   }
 
-  // 4. Ajustamos el método para que coincida con su uso en el componente
   markAsRead(userId: number, otherUserId: number): Observable<any> {
-    const user = this.authService.getCurrentUser();
-    // La ruta ahora es más estándar (RESTful)
-    return this.http.post(`${this.apiUrl}/conversation/mark-as-read`, { userId, otherUserId });
+    // Este método ahora también actualiza el contador localmente para una respuesta más rápida.
+    return this.http.post(`${this.chatApiUrl}/conversation/mark-as-read`, { userId, otherUserId }).pipe(
+      tap(() => this.fetchUnreadCount())
+    );
   }
 
   disconnect(): void {
     if (this.socket) {
       this.socket.disconnect();
-      // @ts-ignore
-      this.socket = null; // Liberamos la referencia
     }
   }
 
   // --- Métodos de API REST (para historial y usuarios) ---
   getUsers(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/users`);
+    return this.http.get<any[]>(`${this.chatApiUrl}/users`);
   }
 
   getConversation(userId: number, otherUserId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/conversation/${userId}/${otherUserId}`); // La ruta ya era correcta
+    return this.http.get<any[]>(`${this.chatApiUrl}/conversation/${userId}/${otherUserId}`);
   }
 
   // --- Métodos de Socket.IO (para tiempo real) ---
   sendMessage(messageData: any): Observable<any> {
-    // 5. Emitimos el evento de socket inmediatamente para el tiempo real.
     this.socket.emit('sendMessage', messageData);
 
     // En paralelo, guardamos el mensaje en la BD a través de la API.
-    return this.http.post(`${this.apiUrl}/messages`, messageData);
+    // El componente ya no necesita suscribirse a esto, el servicio lo maneja.
+    return this.http.post(`${this.chatApiUrl}/messages`, messageData);
   }
   
   // --- Socket.IO Listeners ---
