@@ -104,4 +104,11 @@ export class ChatService {
     // El componente ya no necesita suscribirse a esto, el servicio lo maneja.
     return this.http.post(`${this.chatApiUrl}/messages`, messageData);
   }
+
+  // NUEVO: Método para emitir el evento 'join' explícitamente
+  joinChat(user: any): void {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('join', user);
+    }
+  }
 }
