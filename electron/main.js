@@ -134,52 +134,50 @@ async function startServer() {
     }
 
     // --- LÓGICA DEL CHAT SIMPLIFICADA ---
-    const onlineUsers = new Map(); // Almacena userId -> { socketId, user }
+    // Ya no necesitamos un mapa externo. Asociaremos los datos directamente al socket.
 
     io.on('connection', (socket) => {
         log.info(`Nuevo cliente conectado al chat: ${socket.id}`);
 
         // Evento para que un usuario se "registre" como online
         socket.on('join', (user) => {
+            // Adjuntamos la información del usuario directamente al objeto socket.
+            socket.userData = user;
             log.info(`Usuario ${user.name} (ID: ${user.id}) se unió al chat con socket ${socket.id}.`);
-            onlineUsers.set(user.id.toString(), { socketId: socket.id, user: user });
             
-            // Notificar a TODOS los clientes la nueva lista de usuarios en línea (solo los IDs)
-            io.emit('updateOnlineUsers', Array.from(onlineUsers.keys()));
+            // Notificamos a todos los clientes la nueva lista de usuarios en línea.
+            const onlineUserIds = Array.from(io.sockets.sockets.values())
+                .filter(s => s.userData)
+                .map(s => s.userData.id.toString());
+            io.emit('updateOnlineUsers', [...new Set(onlineUserIds)]); // Usamos Set para evitar duplicados
         });
 
         // Evento para enviar un mensaje en tiempo real
-        socket.on('sendMessage', (data) => {
+        socket.on('sendMessage', async (data) => {
             console.log('[DEBUG] Checkpoint C: Servidor recibió "sendMessage":', data);
-            const recipient = onlineUsers.get(data.to_user_id.toString());
-            if (recipient) {
-                console.log(`[DEBUG] Checkpoint D: Destinatario encontrado. Enviando a socketId: ${recipient.socketId}`);
-                // --- ¡LA CORRECCIÓN CLAVE! ---
-                // Usamos `io.to(recipient.socketId).emit(...)` para enviar el mensaje
-                // exclusivamente al socket del destinatario.
-                io.to(recipient.socketId).emit('newMessage', {
+            
+            // Buscamos el socket del destinatario
+            const sockets = await io.fetchSockets();
+            const recipientSocket = sockets.find(s => s.userData?.id === data.to_user_id);
+
+            if (recipientSocket) {
+                console.log(`[DEBUG] Checkpoint D: Destinatario encontrado. Enviando a socketId: ${recipientSocket.id}`);
+                io.to(recipientSocket.id).emit('newMessage', {
                     ...data,
-                    // Aseguramos que el nombre del remitente se envíe correctamente
-                    user_name: onlineUsers.get(data.from_user_id.toString())?.user.name || 'Usuario'
+                    user_name: socket.userData?.name || 'Usuario'
                 });
             } else {
                 console.log(`[DEBUG] Checkpoint D-ERROR: Destinatario con ID ${data.to_user_id} no encontrado o no está en línea.`);
             }
         });
 
-        // Evento de desconexión
+        // Evento de desconexión (ahora mucho más simple)
         socket.on('disconnect', () => {
             log.info(`Cliente desconectado del chat: ${socket.id}`);
-            // Encontrar qué usuario se desconectó y eliminarlo
-            for (let [userId, userData] of onlineUsers.entries()) {
-                if (userData.socketId === socket.id) {
-                    onlineUsers.delete(userId);
-                    log.info(`Usuario con ID ${userId} se desconectó.`);
-                    // Notificar a todos que la lista de usuarios en línea ha cambiado
-                    io.emit('updateOnlineUsers', Array.from(onlineUsers.keys()));
-                    break;
-                }
-            }
+            const onlineUserIds = Array.from(io.sockets.sockets.values())
+                .filter(s => s.id !== socket.id && s.userData) // Excluimos el socket que se va
+                .map(s => s.userData.id.toString());
+            io.emit('updateOnlineUsers', [...new Set(onlineUserIds)]);
         });
     });
     const serverInstance = httpServer.listen(PORT, () => {
