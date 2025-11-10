@@ -55,7 +55,12 @@ export class LayoutComponent implements OnInit {
     );
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // --- ¡LA SOLUCIÓN CLAVE ESTÁ AQUÍ! ---
+    // Conectamos el servicio de chat tan pronto como el layout se carga.
+    // Esto asegura que el usuario esté "en línea" durante toda su sesión.
+    this.chatService.connect();
+  }
 
   updateStatus(status: 'en linea' | 'ausente' | 'ocupado'): void {
     if (this.authService.currentUserValue) {
