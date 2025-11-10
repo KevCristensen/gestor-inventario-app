@@ -105,7 +105,7 @@ export class ChatService {
     return this.http.post(`${this.chatApiUrl}/messages`, messageData);
   }
 
-  // NUEVO: Método para emitir el evento 'join' explícitamente
+  // Método para emitir el evento 'join' explícitamente
   joinChat(user: any): void {
     if (this.socket && this.socket.connected) {
       this.socket.emit('join', user);
