@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap } from 'rxjs';
+import { Observable, BehaviorSubject, tap, Subject } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
@@ -20,9 +20,14 @@ export class ChatService {
   private onlineUsersSubject = new BehaviorSubject<string[]>([]);
   public onlineUsers$ = this.onlineUsersSubject.asObservable();
 
+  // --- ¡LA CLAVE ESTÁ AQUÍ! ---
+  private newMessageSubject = new Subject<any>();
+  public newMessage$ = this.newMessageSubject.asObservable();
+
   constructor(
     private http: HttpClient,
-    private authService: AuthService
+    private authService: AuthService,
+    private zone: NgZone // <-- ¡LA SOLUCIÓN! Inyectamos NgZone
   ) {}
 
   // --- Conexión de Socket.IO ---
@@ -44,6 +49,16 @@ export class ChatService {
     // Escuchamos la lista actualizada de usuarios en línea
     this.socket.on('updateOnlineUsers', (userIds: string[]) => {
       this.onlineUsersSubject.next(userIds);
+    });
+
+    // El servicio ahora escucha los nuevos mensajes y los emite a través del Subject.
+    this.socket.on('newMessage', (message) => {
+      console.log('[DEBUG] Checkpoint E: Servicio recibió "newMessage" desde el socket:', message);
+      // Ejecutamos la emisión del nuevo mensaje DENTRO de la zona de Angular.
+      this.zone.run(() => {
+        console.log('[DEBUG] Checkpoint F: Emitiendo mensaje a través de newMessageSubject...');
+        this.newMessageSubject.next(message);
+      });
     });
 
     // Inicializamos el contador de no leídos
@@ -89,12 +104,4 @@ export class ChatService {
     // El componente ya no necesita suscribirse a esto, el servicio lo maneja.
     return this.http.post(`${this.chatApiUrl}/messages`, messageData);
   }
-  
-  // --- Socket.IO Listeners ---
-  onNewMessage(): Observable<any> {
-    return new Observable(observer => {
-      this.socket.on('newMessage', (message) => observer.next(message));
-    });
-  }
-
 }

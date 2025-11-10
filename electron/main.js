@@ -150,10 +150,20 @@ async function startServer() {
 
         // Evento para enviar un mensaje en tiempo real
         socket.on('sendMessage', (data) => {
+            console.log('[DEBUG] Checkpoint C: Servidor recibió "sendMessage":', data);
             const recipient = onlineUsers.get(data.to_user_id.toString());
             if (recipient) {
-                // Emitir solo al destinatario para no molestar a los demás
-                io.to(recipient.socketId).emit('newMessage', data);
+                console.log(`[DEBUG] Checkpoint D: Destinatario encontrado. Enviando a socketId: ${recipient.socketId}`);
+                // --- ¡LA CORRECCIÓN CLAVE! ---
+                // Usamos `io.to(recipient.socketId).emit(...)` para enviar el mensaje
+                // exclusivamente al socket del destinatario.
+                io.to(recipient.socketId).emit('newMessage', {
+                    ...data,
+                    // Aseguramos que el nombre del remitente se envíe correctamente
+                    user_name: onlineUsers.get(data.from_user_id.toString())?.user.name || 'Usuario'
+                });
+            } else {
+                console.log(`[DEBUG] Checkpoint D-ERROR: Destinatario con ID ${data.to_user_id} no encontrado o no está en línea.`);
             }
         });
 

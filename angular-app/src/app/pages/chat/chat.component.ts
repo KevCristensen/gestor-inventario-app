@@ -55,12 +55,16 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     // Escuchamos la lista de usuarios en línea en tiempo real
     this.onlineUsersSub = this.chatService.onlineUsers$.subscribe(userIds => {
       this.onlineUserIds = userIds;
+      // Cada vez que cambia el estado online, reordenamos la lista de usuarios
+      if (this.users.length > 0) {
+        this.sortUsers();
+      }
       this.cdr.detectChanges();
     });
 
     // --- ¡LA MAGIA DEL TIEMPO REAL! ---
     // Escuchamos los nuevos mensajes que llegan por el socket.
-    this.newMessageSub = this.chatService.onNewMessage().subscribe((message: any) => {
+    this.newMessageSub = this.chatService.newMessage$.subscribe((message: any) => {
       // Si el mensaje recibido es de la conversación que tenemos abierta...
       if (this.selectedUser && message.from_user_id === this.selectedUser.id) {
         this.messages.push(message);
@@ -84,7 +88,9 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   loadUsers(): void {
     this.chatService.getUsers().subscribe(users => {
-      this.users = users.filter(u => u.id !== this.currentUser?.id);
+      // Filtramos al usuario actual y los usuarios sin nombre
+      this.users = users.filter(u => u.id !== this.currentUser?.id && u.name);
+      this.sortUsers(); // Ordenamos la lista inicial
       this.cdr.detectChanges(); // Forzamos la actualización de la vista
     });
   }
@@ -100,6 +106,17 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
+  // NUEVO: Método para ordenar usuarios (en línea primero, luego alfabéticamente)
+  private sortUsers(): void {
+    this.users.sort((a, b) => {
+      const aIsOnline = this.isUserOnline(a.id);
+      const bIsOnline = this.isUserOnline(b.id);
+      if (aIsOnline && !bIsOnline) return -1;
+      if (!aIsOnline && bIsOnline) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
   sendMessage(): void {
     if (!this.newMessage.trim() || !this.selectedUser || !this.currentUser?.id) return; // Aseguramos que currentUser y su ID existan
 
@@ -112,6 +129,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       user_name: this.currentUser.name,
       created_at: new Date().toISOString()
     };
+
+    console.log('[DEBUG] Checkpoint A: Componente va a enviar mensaje:', messageData);
 
     // Actualización optimista: añadimos el mensaje a la UI inmediatamente
     this.messages.push(messageData);
