@@ -35,18 +35,31 @@ router.get('/all-low-stock-alerts', async (req, res) => {
 // GET /api/dashboard/global-inventory
 router.get('/global-inventory', async (req, res) => {
     try {
-        const query = `
+        const { search } = req.query;
+
+        let query = `
             SELECT 
                 p.id, p.name, p.barcode, p.min_stock_level, -- Añade min_stock_level
                 e.id as entity_id,
-                e.name as entity_name,
+                e.short_name as entity_name, -- ¡CAMBIO CLAVE! Usamos la abreviatura
                 SUM(CASE WHEN im.type = 'entrada' THEN im.quantity ELSE -im.quantity END) as stock
             FROM products p
             JOIN inventory_movements im ON p.id = im.product_id
             JOIN entities e ON im.entity_id = e.id
-            GROUP BY p.id, p.name, p.barcode, p.min_stock_level, e.id, e.name
-            ORDER BY p.name, e.name;
         `;
+        const params = [];
+
+        if (search && search.trim() !== '') {
+            query += ' WHERE (p.name LIKE ? OR p.barcode LIKE ?)';
+            const searchTerm = `%${search}%`;
+            params.push(searchTerm, searchTerm);
+        }
+
+        query += `
+            GROUP BY p.id, p.name, p.barcode, p.min_stock_level, e.id, e.short_name
+            ORDER BY p.name, e.short_name;
+        `;
+
         const [inventory] = await dbPool.query(query);
         res.json(inventory);
     } catch (error) {

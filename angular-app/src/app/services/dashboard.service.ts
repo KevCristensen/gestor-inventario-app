@@ -14,10 +14,6 @@ export class DashboardService {
     return this.http.get<any[]>(`${this.apiUrl}/all-low-stock-alerts?sortBy=${sortBy}&order=${order}`);
   }
 
-  getGlobalInventory(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/global-inventory`);
-  }
-
   getSummary(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/summary`);
   }

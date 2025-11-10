@@ -108,7 +108,7 @@ async function startServer() {
     backendApp.use('/api/providers', checkRole, providersRoutes);
     backendApp.use('/api/products', checkRole, productsRoutes);
     backendApp.use('/api/auth', authRoutes);
-    backendApp.use('/api/receptions', checkRole, receptionsRoutes); 
+    backendApp.use('/api/receptions', checkRole, receptionsRoutes);
     backendApp.use('/api/dashboard', checkRole, dashboardRoutes);
     backendApp.use('/api/inventory', checkRole, inventoryRoutes); 
     backendApp.use('/api/reports', checkRole, reportsRoutes); 

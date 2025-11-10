@@ -25,4 +25,13 @@ export class InventoryService {
 
     return this.http.get<any[]>(`${this.apiUrl}/exits-by-date`, { params });
   }
+
+  getGlobalInventory(searchTerm?: string): Observable<any[]> {
+    let params = new HttpParams();
+    if (searchTerm && searchTerm.trim() !== '') {
+      params = params.set('search', searchTerm);
+    }
+    // Apuntamos al endpoint correcto que ahora estará en /api/inventory/global
+    return this.http.get<any[]>(`http://localhost:3000/api/dashboard/global-inventory`, { params });
+  }
 }
