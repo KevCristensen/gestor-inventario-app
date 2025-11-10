@@ -49,13 +49,6 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   ngOnInit(): void {
-    this.chatService.connect();
-    // --- ¡LA SOLUCIÓN CLAVE ESTÁ AQUÍ! ---
-    // Nos aseguramos de que el usuario se "una" a la sala cada vez que el componente se carga.
-    // Esto re-registra su estado 'online' en el servidor si la conexión ya existía.
-    if (this.currentUser) {
-      this.chatService.joinChat(this.currentUser);
-    }
     this.loadUsers();
 
     // Escuchamos la lista de usuarios en línea en tiempo real
