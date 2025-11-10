@@ -112,6 +112,17 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       room: this.currentRoom
     };
 
+    // --- ACTUALIZACIÓN OPTIMISTA ---
+    // Añadimos el mensaje a la UI inmediatamente, sin esperar al backend.
+    const optimisticMessage: Message = {
+      id: Date.now(), // ID temporal
+      text: this.newMessage,
+      room: this.currentRoom,
+      authorId: this.chatService.getCurrentSocketId(), // ¡Nos identificamos como el autor!
+      createdAt: new Date()
+    };
+    this.messages.push(optimisticMessage);
+
     // Enviamos el mensaje a través del servicio, que lo emitirá por socket.
     this.chatService.sendMessage(messageDto);
 

@@ -11,11 +11,14 @@ import { Server, Socket } from 'socket.io';
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 
-// El decorador Gateway define el namespace y habilita CORS
+// El decorador Gateway ahora escucha en la raíz, pero el namespace 'chat' sigue funcionando
+// gracias a la configuración del cliente.
 @WebSocketGateway({
+  // No especificamos puerto aquí, dejamos que se adjunte al servidor principal de NestJS
+  // Pero sí especificamos el namespace para ser explícitos.
   namespace: 'chat',
   cors: {
-    origin: '*', // En producción, deberías restringir esto a tu dominio
+    origin: '*', // Para depuración, permitimos todo. Luego podemos restringirlo.
   },
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {

@@ -36,7 +36,8 @@ export class ChatService {
     // Inyectamos el socket que ya está configurado en app.config.ts para apuntar al backend de NestJS.
     private socket: Socket, // Inyectamos el socket configurado en app.config.ts
     private http: HttpClient,
-    private authService: AuthService,
+    private authService: AuthService, // Inyectamos NgZone
+    private ngZone: NgZone
   ) {
     // Opcional: Escuchar eventos de conexión/desconexión para depuración.
     this.socket.on('connect', () => {
@@ -48,7 +49,9 @@ export class ChatService {
     // Escuchamos los mensajes nuevos aquí para actualizar el contador
     this.getNewMessage().subscribe(message => {
       if (!this.isChatOpenSubject.value) {
-        this.unreadCountSubject.next(this.unreadCountSubject.value + 1);
+        this.ngZone.run(() => {
+          this.unreadCountSubject.next(this.unreadCountSubject.value + 1);
+        });
       }
     });
   }
@@ -98,7 +101,9 @@ export class ChatService {
     const user = this.authService.getCurrentUser();
     if (user) {
       this.http.get<{ count: number }>(`${this.apiUrl}/unread-count/${user.id}`).subscribe(data => {
-        this.unreadCountSubject.next(data.count);
+        this.ngZone.run(() => {
+          this.unreadCountSubject.next(data.count);
+        });
       });
     }
   }
