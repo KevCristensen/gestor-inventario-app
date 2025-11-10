@@ -1,5 +1,5 @@
 // /Users/kevinbriancristensensepulveda/Development/gestor-inventario/angular-app/src/app/shared/components/chat-bubble/chat-bubble.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChatService } from '../../../services/chat.service';
 import { Observable } from 'rxjs';
@@ -14,12 +14,16 @@ import { Observable } from 'rxjs';
 export class ChatBubbleComponent implements OnInit {
   unreadCount = 0;
 
-  constructor(private chatService: ChatService) {}
+  constructor(private chatService: ChatService, private cdr: ChangeDetectorRef) {} // Inyectar ChangeDetectorRef
 
   ngOnInit(): void {
     // Nos suscribimos al contador de no leídos del servicio
     this.chatService.unreadCount$.subscribe(count => {
-      this.unreadCount = count;
+      // Diferimos la actualización para el siguiente ciclo de detección de cambios
+      setTimeout(() => {
+        this.unreadCount = count;
+        this.cdr.detectChanges(); // Forzar la detección de cambios para este componente
+      }, 0);
     });
   }
 
