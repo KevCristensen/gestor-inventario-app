@@ -1,0 +1,43 @@
+/* /Users/kevinbriancristensensepulveda/Development/gestor-inventario/angular-app/src/app/shared/components/chat-bubble/chat-bubble.component.scss */
+:host {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 1000;
+}
+
+.chat-bubble-container {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  background-color: #0d6efd; // Azul principal
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease-out, background-color 0.2s;
+
+  &:hover {
+    transform: scale(1.1);
+    background-color: #0b5ed7; // Azul más oscuro
+  }
+}
+
+.unread-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #dc3545; // Rojo para notificaciones
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}

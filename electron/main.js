@@ -133,53 +133,6 @@ async function startServer() {
         });
     }
 
-    // --- LÓGICA DEL CHAT SIMPLIFICADA ---
-    // Ya no necesitamos un mapa externo. Asociaremos los datos directamente al socket.
-
-    io.on('connection', (socket) => {
-        log.info(`Nuevo cliente conectado al chat: ${socket.id}`);
-
-        // Evento para que un usuario se "registre" como online
-        socket.on('join', (user) => {
-            // Adjuntamos la información del usuario directamente al objeto socket.
-            socket.userData = user;
-            log.info(`Usuario ${user.name} (ID: ${user.id}) se unió al chat con socket ${socket.id}.`);
-            
-            // Notificamos a todos los clientes la nueva lista de usuarios en línea.
-            const onlineUserIds = Array.from(io.sockets.sockets.values())
-                .filter(s => s.userData)
-                .map(s => s.userData.id.toString());
-            io.emit('updateOnlineUsers', [...new Set(onlineUserIds)]); // Usamos Set para evitar duplicados
-        });
-
-        // Evento para enviar un mensaje en tiempo real
-        socket.on('sendMessage', async (data) => {
-            console.log('[DEBUG] Checkpoint C: Servidor recibió "sendMessage":', data);
-            
-            // Buscamos el socket del destinatario
-            const sockets = await io.fetchSockets();
-            const recipientSocket = sockets.find(s => s.userData?.id === data.to_user_id);
-
-            if (recipientSocket) {
-                console.log(`[DEBUG] Checkpoint D: Destinatario encontrado. Enviando a socketId: ${recipientSocket.id}`);
-                io.to(recipientSocket.id).emit('newMessage', {
-                    ...data,
-                    user_name: socket.userData?.name || 'Usuario'
-                });
-            } else {
-                console.log(`[DEBUG] Checkpoint D-ERROR: Destinatario con ID ${data.to_user_id} no encontrado o no está en línea.`);
-            }
-        });
-
-        // Evento de desconexión (ahora mucho más simple)
-        socket.on('disconnect', () => {
-            log.info(`Cliente desconectado del chat: ${socket.id}`);
-            const onlineUserIds = Array.from(io.sockets.sockets.values())
-                .filter(s => s.id !== socket.id && s.userData) // Excluimos el socket que se va
-                .map(s => s.userData.id.toString());
-            io.emit('updateOnlineUsers', [...new Set(onlineUserIds)]);
-        });
-    });
     const serverInstance = httpServer.listen(PORT, () => {
         log.info(`Servidor Express y Socket.IO corriendo en http://localhost:${PORT}`);
     });

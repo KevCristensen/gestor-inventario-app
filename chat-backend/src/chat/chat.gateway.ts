@@ -1,0 +1,52 @@
+import {
+  WebSocketGateway,
+  SubscribeMessage,
+  MessageBody,
+  WebSocketServer,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  ConnectedSocket,
+} from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import { MessageService } from './message.service';
+import { CreateMessageDto } from './dto/create-message.dto';
+
+// El decorador Gateway define el namespace y habilita CORS
+@WebSocketGateway({
+  namespace: 'chat',
+  cors: {
+    origin: '*', // En producción, deberías restringir esto a tu dominio
+  },
+})
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer()
+  server: Server;
+
+  constructor(private readonly messageService: MessageService) {}
+
+  handleConnection(client: Socket) {
+    console.log(`(Chat-Backend) Cliente conectado: ${client.id}`);
+  }
+
+  handleDisconnect(client: Socket) {
+    console.log(`(Chat-Backend) Cliente desconectado: ${client.id}`);
+  }
+
+  @SubscribeMessage('joinRoom')
+  handleJoinRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() room: string,
+  ): void {
+    console.log(`(Chat-Backend) Cliente ${client.id} se unió a la sala: ${room}`);
+    client.join(room);
+  }
+
+  @SubscribeMessage('createMessage')
+  async handleCreateMessage(
+    @MessageBody() createMessageDto: CreateMessageDto,
+    @ConnectedSocket() client: Socket,
+  ): Promise<void> {
+    const message = await this.messageService.create(createMessageDto, client.id);
+    this.server.to(createMessageDto.room).emit('message', message);
+  }
+}

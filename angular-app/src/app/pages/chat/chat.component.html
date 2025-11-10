@@ -17,9 +17,7 @@
             <div class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center font-bold text-lg">
               {{ user.name ? user.name.charAt(0) : '?' }}
             </div>
-            @if (isUserOnline(user.id)) {
-              <span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-400 ring-2 ring-gray-800"></span>
-            }
+            <!-- La lógica de 'en línea' se ha eliminado temporalmente -->
           </div>
           
           <div class="flex-grow">
@@ -43,30 +41,23 @@
           <div class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center font-bold text-lg">
             {{ selectedUser.name ? selectedUser.name.charAt(0) : '?' }}
           </div>
-          @if (isUserOnline(selectedUser.id)) {
-            <span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-400 ring-2 ring-gray-800"></span>
-          }
         </div>
         <div>
           <h3 class="font-semibold text-lg">{{ selectedUser.name }}</h3>
-          <p class="text-sm" [ngClass]="isUserOnline(selectedUser.id) ? 'text-green-400' : 'text-gray-500'">
-            {{ isUserOnline(selectedUser.id) ? 'En línea' : 'Desconectado' }}
-          </p>
+        <!-- La lógica de 'en línea' se ha eliminado temporalmente -->
+        <p class="text-sm text-gray-500">{{ selectedUser.role }}</p>
         </div>      </div>
 
       <!-- Contenedor de Mensajes -->
       <div #messageContainer class="flex-grow p-6 overflow-y-auto h-0">
         <div class="space-y-4">
-          @for(message of messages; track message.id || message.created_at) {
-            <div class="flex" [ngClass]="{'justify-end': message.from_user_id === currentUser?.id, 'justify-start': message.from_user_id !== currentUser?.id}">
+          @for(message of messages; track message.id || message.createdAt) {
+            <div class="flex" [ngClass]="{'justify-end': isMyMessage(message), 'justify-start': !isMyMessage(message)}">
               <div class="max-w-lg">
-                <div class="px-4 py-2 rounded-2xl" [ngClass]="{
-                  'bg-blue-600 rounded-br-none': message.from_user_id === currentUser?.id, 
-                  'bg-gray-700 rounded-bl-none': message.from_user_id !== currentUser?.id
-                }">
-                  <p>{{ message.content }}</p>
+                <div class="px-4 py-2 rounded-2xl" [ngClass]="{ 'bg-blue-600 rounded-br-none': isMyMessage(message), 'bg-gray-700 rounded-bl-none': !isMyMessage(message) }">
+                  <p>{{ message.text }}</p>
                 </div>
-                <span class="text-xs text-gray-500 mt-1 px-2 block">{{ message.created_at | date:'shortTime' }}</span>
+                <span class="text-xs text-gray-500 mt-1 px-2 block">{{ message.createdAt | date:'shortTime' }}</span>
               </div>
             </div>
           }

@@ -1,9 +1,9 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef, AfterViewChecked, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { ChatService } from '../../services/chat.service';
-import { AuthService, User } from '../../services/auth.service';
+import { ChatService, Message } from '../../services/chat.service'; // Importamos la interfaz Message
+import { AuthService, User } from '../../services/auth.service'; // Mantenemos la interfaz User
 import { NotificationService } from '../../services/notification.service';
 import { EntitiesService } from '../../services/entities.service';
 
@@ -23,14 +23,12 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('messageContainer') private messageContainer!: ElementRef;
 
   users: any[] = [];
-  selectedUser: any = null;
-  messages: any[] = [];
+  selectedUser: User | null = null;
+  messages: Message[] = [];
   newMessage: string = '';
   currentUser: User | null;
-  onlineUserIds: string[] = [];
-
-  // Suscripciones para una limpieza adecuada
-  private onlineUsersSub!: Subscription;
+  currentRoom: string | null = null;
+  // Suscripción para los nuevos mensajes
   private newMessageSub!: Subscription;
 
   constructor(
@@ -38,7 +36,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     private authService: AuthService,
     private notificationService: NotificationService,
     private entitiesService: EntitiesService, // Inyectamos el servicio
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private zone: NgZone // Inyectamos NgZone
   ) {
     this.currentUser = this.authService.getCurrentUser();
   }
@@ -50,100 +49,85 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   ngOnInit(): void {
     this.loadUsers();
-
-    // Escuchamos la lista de usuarios en línea en tiempo real
-    this.onlineUsersSub = this.chatService.onlineUsers$.subscribe(userIds => {
-      this.onlineUserIds = userIds;
-      // Cada vez que cambia el estado online, reordenamos la lista de usuarios
-      if (this.users.length > 0) {
-        this.sortUsers();
+    
+    // Nos suscribimos al observable que nos traerá los nuevos mensajes en tiempo real.
+    this.newMessageSub = this.chatService.getNewMessage().subscribe((message: Message) => {
+      // Solo añadimos el mensaje si pertenece a la sala que tenemos abierta.
+      if (message.room === this.currentRoom) {
+        this.zone.run(() => {
+          this.messages.push(message);
+          this.cdr.detectChanges();
+        });
       }
-      this.cdr.detectChanges();
-    });
-
-    // --- ¡LA MAGIA DEL TIEMPO REAL! ---
-    // Escuchamos los nuevos mensajes que llegan por el socket.
-    this.newMessageSub = this.chatService.newMessage$.subscribe((message: any) => {
-      // Si el mensaje recibido es de la conversación que tenemos abierta...
-      if (this.selectedUser && message.from_user_id === this.selectedUser.id) {
-        this.messages.push(message);
-        this.cdr.detectChanges();
-        // Podríamos añadir una llamada para marcarlo como leído aquí
-      } else {
-        // Si es de otra conversación, actualizamos el contador de no leídos
-        this.chatService.fetchUnreadCount();
-        // Opcional: mostrar una notificación
-        this.notificationService.showInfo(`Nuevo mensaje de ${message.user_name}`, 'Chat');
-      } 
     });
   }
 
   ngOnDestroy(): void {
-    // Limpiamos las suscripciones y desconectamos el socket al salir del componente
-    this.onlineUsersSub?.unsubscribe();
+    // Limpiamos la suscripción al destruir el componente para evitar fugas de memoria.
     this.newMessageSub?.unsubscribe();
   }
 
   loadUsers(): void {
     this.chatService.getUsers().subscribe(users => {
-      // Filtramos al usuario actual y los usuarios sin nombre
+      // Filtramos al usuario actual y los usuarios sin nombre.
       this.users = users.filter(u => u.id !== this.currentUser?.id && u.name);
-      this.sortUsers(); // Ordenamos la lista inicial
-      this.cdr.detectChanges(); // Forzamos la actualización de la vista
+      this.cdr.detectChanges();
     });
   }
 
-  selectUser(user: any): void {
+  selectUser(user: User): void {
+    if (!this.currentUser) return;
+
     this.selectedUser = user;
     this.messages = []; // Limpiamos los mensajes anteriores
-    if (this.currentUser?.id) { // Aseguramos que currentUser y su ID existan
-      this.chatService.getConversation(this.currentUser.id, user.id).subscribe(messages => {
-        this.messages = messages;
-        this.cdr.detectChanges();
-      });
-    }
-  }
 
-  // NUEVO: Método para ordenar usuarios (en línea primero, luego alfabéticamente)
-  private sortUsers(): void {
-    this.users.sort((a, b) => {
-      const aIsOnline = this.isUserOnline(a.id);
-      const bIsOnline = this.isUserOnline(b.id);
-      if (aIsOnline && !bIsOnline) return -1;
-      if (!aIsOnline && bIsOnline) return 1;
-      return a.name.localeCompare(b.name);
+    // Creamos un nombre de sala único y consistente ordenando los IDs.
+    const roomName = [this.currentUser.id, user.id].sort().join('_');
+    this.currentRoom = roomName;
+
+    // 1. Le decimos al backend que queremos unirnos a esta sala.
+    this.chatService.joinRoom(this.currentRoom);
+
+    // 2. Pedimos el historial de la conversación a la API REST.
+    this.chatService.getConversation(this.currentRoom).subscribe(history => {
+      // Adaptamos el historial al nuevo formato de mensajes.
+      this.messages = history.map(h => ({
+        id: h.id,
+        text: h.content, // Renombramos 'content' a 'text'
+        room: this.currentRoom!,
+        // Para el historial, el authorId no es el socket.id, sino el user.id
+        // Usaremos un prefijo para diferenciarlo y poder aplicar estilos.
+        authorId: `user_${h.from_user_id}`,
+        createdAt: new Date(h.created_at)
+      }));
+      this.cdr.detectChanges();
     });
   }
 
   sendMessage(): void {
-    if (!this.newMessage.trim() || !this.selectedUser || !this.currentUser?.id) return; // Aseguramos que currentUser y su ID existan
+    if (!this.newMessage.trim() || !this.currentRoom) return;
 
-    const messageData = {
-      from_user_id: this.currentUser.id,
-      to_user_id: this.selectedUser.id,
-      content: this.newMessage,
-      entity_id: this.currentUser.entity_id,
-      // Añadimos datos extra para la actualización optimista
-      user_name: this.currentUser.name,
-      created_at: new Date().toISOString()
+    const messageDto = {
+      text: this.newMessage,
+      room: this.currentRoom
     };
 
-    console.log('[DEBUG] Checkpoint A: Componente va a enviar mensaje:', messageData);
+    // Enviamos el mensaje a través del servicio, que lo emitirá por socket.
+    this.chatService.sendMessage(messageDto);
 
-    // Actualización optimista: añadimos el mensaje a la UI inmediatamente
-    this.messages.push(messageData);
-
-    // Enviamos el mensaje a través del servicio (que usa sockets y API)
-    this.chatService.sendMessage(messageData).subscribe({
-      error: () => this.notificationService.showError('No se pudo enviar el mensaje.')
-    });
+    // Opcional: Guardar en la BD a través de la API REST (si aún es necesario)
+    // this.http.post(...)
 
     this.newMessage = ''; // Limpiamos el input
     this.cdr.detectChanges();
   }
 
-  isUserOnline(userId: number): boolean {
-    return this.onlineUserIds.includes(userId.toString());
+  // --- NUEVO: Comprueba si un mensaje es nuestro comparando el authorId con nuestro socketId ---
+  isMyMessage(message: Message): boolean {
+    // Comparamos el authorId del mensaje en tiempo real con nuestro socketId actual.
+    // O, para mensajes del historial, comparamos el authorId (user_1) con nuestro ID de usuario.
+    return message.authorId === this.chatService.getCurrentSocketId() || 
+           message.authorId === `user_${this.currentUser?.id}`;
   }
 
   scrollToBottom(): void {
