@@ -54,33 +54,43 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.newMessageSub = this.chatService.getNewMessage().subscribe((message: Message) => {
       console.log(`[ChatComponent] Mensaje recibido en tiempo real:`, message);
       console.log(`[ChatComponent] currentRoom: ${this.currentRoom}, message.room: ${message.room}`);
+      console.log(`[ChatComponent] Socket ID actual: ${this.chatService.getCurrentSocketId()}`);
 
       // Solo añadimos el mensaje si pertenece a la sala que tenemos abierta.
       if (message.room === this.currentRoom) {
         this.zone.run(() => {
           // Si el mensaje recibido tiene un tempId y su autor somos nosotros,
           // significa que es la confirmación de un mensaje optimista.
-          if (message.tempId && message.authorId === this.chatService.getCurrentSocketId()) {
+          const isMyOwnConfirmedMessage = message.tempId && message.authorId === this.chatService.getCurrentSocketId();
+          console.log(`[ChatComponent] Es mi propio mensaje confirmado (tempId: ${message.tempId}, authorId: ${message.authorId})? ${isMyOwnConfirmedMessage}`);
+
+          if (isMyOwnConfirmedMessage) {
             const existingOptimisticIndex = this.messages.findIndex(
+              // Asegurarse de que el tempId y el authorId coincidan
+              // El authorId del mensaje optimista es el socketId, el del mensaje recibido del backend también es el socketId.
               m => m.tempId === message.tempId && m.authorId === message.authorId
             );
 
             if (existingOptimisticIndex > -1) {
               // Reemplazamos el mensaje optimista con el mensaje real del backend
+              console.log(`[ChatComponent] Reemplazando mensaje optimista en índice ${existingOptimisticIndex}.`);
               this.messages[existingOptimisticIndex] = message;
             } else {
-              // Si no encontramos el optimista (caso raro), lo añadimos de todas formas
+              // Si no encontramos el optimista (esto no debería pasar si la lógica es correcta), lo añadimos de todas formas
+              console.warn(`[ChatComponent] No se encontró mensaje optimista para reemplazar (tempId: ${message.tempId}). Añadiendo mensaje recibido.`);
+              // Esto podría ocurrir si el mensaje optimista fue eliminado o si hay un desajuste en los IDs.
               this.messages.push(message);
             }
           } else {
+            console.log(`[ChatComponent] Añadiendo mensaje de otro usuario o sin tempId:`, message);
             // Es un mensaje de otro usuario o un mensaje nuestro sin tempId (ej. del historial)
             this.messages.push(message);
           }
-          this.cdr.detectChanges();
+          this.cdr.detectChanges(); // Forzamos la detección de cambios para actualizar la UI
           this.scrollToBottom(); // Aseguramos el scroll después de añadir/reemplazar
         });
-      } else {
-        console.log(`[ChatComponent] Mensaje para otra sala (${message.room}), ignorado. Sala actual: ${this.currentRoom}`);
+      } else { // Este bloque else se ejecuta si message.room !== this.currentRoom
+        console.warn(`[ChatComponent] Mensaje recibido para la sala '${message.room}', pero la sala actual es '${this.currentRoom}'. Mensaje ignorado.`);
       }
     });
   }
@@ -102,6 +112,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!this.currentUser) return;
 
     this.selectedUser = user;
+    console.log(`[ChatComponent] Usuario seleccionado: ${user.name}, ID: ${user.id}`);
     this.messages = []; // Limpiamos los mensajes anteriores
 
     // Creamos un nombre de sala único y consistente ordenando los IDs.
@@ -109,6 +120,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.currentRoom = roomName;
 
     // 1. Le decimos al backend que queremos unirnos a esta sala.
+    console.log(`[ChatComponent] Uniéndose a la sala: ${this.currentRoom}`);
     this.chatService.joinRoom(this.currentRoom);
 
     // 2. Pedimos el historial de la conversación a la API REST.
