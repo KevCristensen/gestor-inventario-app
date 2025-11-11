@@ -34,9 +34,6 @@ export class ChatService {
   private unreadCountSubject = new BehaviorSubject<number>(0);
   public unreadCount$ = this.unreadCountSubject.asObservable();
 
-  // --- NUEVO: Subject para centralizar la recepción de mensajes ---
-  private newMessageSubject = new BehaviorSubject<Message | null>(null);
-  public newMessage$ = this.newMessageSubject.asObservable().pipe(filter(msg => msg !== null)) as Observable<Message>;
 
   constructor(
     // Inyectamos el socket que ya está configurado en app.config.ts para apuntar al backend de NestJS.
@@ -50,19 +47,6 @@ export class ChatService {
       console.log('(Angular-Frontend) Conectado al servidor de chat NestJS con ID:', this.socket.ioSocket.id);
       // Cuando nos conectamos (o reconectamos), pedimos el contador de no leídos.
       this.fetchUnreadCount();
-    });
-    
-    // --- LÓGICA CENTRALIZADA ---
-    // Nos suscribimos UNA SOLA VEZ al evento 'message' del socket.
-    this.socket.fromEvent<Message>('message').subscribe(message => {
-      // 1. Retransmitimos el mensaje a todos los suscriptores (como ChatComponent)
-      this.newMessageSubject.next(message);
-      // 2. Actualizamos el contador si el chat no está abierto
-      if (!this.isChatOpenSubject.value) {
-        this.ngZone.run(() => {
-          this.unreadCountSubject.next(this.unreadCountSubject.value + 1);
-        });
-      }
     });
   }
 
@@ -91,9 +75,16 @@ export class ChatService {
   }
 
   // Escucha los nuevos mensajes que llegan a la sala.
-  // ESTE MÉTODO YA NO ES NECESARIO, PERO LO DEJAMOS POR SI SE USA EN OTRO LADO.
   getNewMessage(): Observable<Message> {
-    return this.newMessage$; // Ahora devolvemos nuestro Subject
+    // Devolvemos directamente el observable del evento del socket.
+    // Y añadimos la lógica para actualizar el contador de no leídos aquí.
+    return this.socket.fromEvent<Message>('message').pipe(
+      tap(() => {
+        if (!this.isChatOpenSubject.value) {
+          this.unreadCountSubject.next(this.unreadCountSubject.value + 1);
+        }
+      })
+    );
   }
 
   // Obtiene el ID del socket actual para saber si un mensaje es nuestro.
