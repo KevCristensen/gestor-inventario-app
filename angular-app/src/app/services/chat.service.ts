@@ -12,6 +12,8 @@ export interface Message {
   id: number;
   text: string;
   room: string;
+  authorUserId: number; // Añadido
+  entityId: number;     // Añadido
   authorId: string; // El ID del socket del autor
   createdAt: Date;
 }
@@ -76,7 +78,7 @@ export class ChatService {
   }
 
   // Envía un mensaje a una sala.
-  sendMessage(messageDto: { text: string, room: string }): void {
+  sendMessage(messageDto: { text: string, room: string, authorUserId: number, entityId: number }): void {
     this.socket.emit('createMessage', messageDto);
   }
 

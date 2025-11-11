@@ -98,9 +98,17 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         // Para el historial, el authorId no es el socket.id, sino el user.id
         // Usaremos un prefijo para diferenciarlo y poder aplicar estilos.
         authorId: `user_${h.from_user_id}`,
+        authorUserId: h.from_user_id, // ¡Añadido!
+        entityId: h.entity_id,         // ¡Añadido!
         createdAt: new Date(h.created_at)
       }));
       this.cdr.detectChanges();
+    });
+
+    // 3. Marcamos los mensajes como leídos (esto actualiza el contador en la burbuja)
+    // La lógica de `markAsRead` sigue apuntando al backend antiguo, lo cual es correcto por ahora.
+    this.chatService.markAsRead(user.id).subscribe(() => {
+      // La actualización del contador se maneja dentro del servicio.
     });
   }
 
@@ -109,7 +117,9 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     const messageDto = {
       text: this.newMessage,
-      room: this.currentRoom
+      room: this.currentRoom!,
+      authorUserId: this.currentUser!.id,   // ¡Añadido!
+      entityId: this.currentUser!.entity_id // ¡Añadido!
     };
 
     // --- ACTUALIZACIÓN OPTIMISTA ---
@@ -119,6 +129,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       text: this.newMessage,
       room: this.currentRoom,
       authorId: this.chatService.getCurrentSocketId(), // ¡Nos identificamos como el autor!
+      authorUserId: this.currentUser!.id,   // ¡Añadido!
+      entityId: this.currentUser!.entity_id, // ¡Añadido!
       createdAt: new Date()
     };
     this.messages.push(optimisticMessage);

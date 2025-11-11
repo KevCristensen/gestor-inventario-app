@@ -20,7 +20,7 @@ exports.getConversation = async (req, res) => {
   const { userId1, userId2 } = req.params;
   try {
     const [messages] = await db.query(`
-      SELECT m.id, m.from_user_id, m.to_user_id, m.message_text AS content, m.created_at, u.name as user_name
+      SELECT m.id, m.from_user_id, m.to_user_id, m.entity_id, m.message_text AS content, m.created_at, u.name as user_name
        FROM chat_messages m
        JOIN users u ON m.from_user_id = u.id
        WHERE (m.from_user_id = ? AND m.to_user_id = ?) OR (m.from_user_id = ? AND m.to_user_id = ?)
@@ -71,4 +71,18 @@ exports.getUnreadCount = async (req, res) => {
     console.error('Error al obtener mensajes no leídos:', error);
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
+};
+
+
+exports.markAsRead = async (req, res) => { // Renombrado a 'markAsRead'
+    const { to_user_id, from_user_id } = req.body;
+    try {
+        await db.query(
+            'UPDATE chat_messages SET is_read = 1 WHERE to_user_id = ? AND from_user_id = ? AND is_read = 0',
+            [to_user_id, from_user_id]
+        );
+        res.status(200).json({ message: 'Messages marked as read' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error marking messages as read.' });
+    }
 };

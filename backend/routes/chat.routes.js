@@ -9,4 +9,7 @@ router.post('/messages', chatController.postMessage);
 router.get('/unread-count/:userId', chatController.getUnreadCount);
 // La ruta para marcar como leído la crearemos después, ya que es más compleja.
 
+
+router.post('/mark-as-read', chatController.markAsRead);
+
 module.exports = router;
