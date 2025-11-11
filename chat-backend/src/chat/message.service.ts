@@ -13,6 +13,7 @@ export class MessageService {
   ) {}
 
   async create(createMessageDto: CreateMessageDto, client: Socket) {
+    console.log(`[MessageService] Iniciando creaci\xF3n de mensaje. DTO:`, createMessageDto);
     const { room, text, authorUserId, entityId } = createMessageDto; // Ahora recibimos authorUserId y entityId del DTO
 
     // Extraemos los IDs de usuario de la sala.
@@ -21,13 +22,15 @@ export class MessageService {
     
     // El toUserId es el otro participante de la sala que no es el autor
     const toUserId = roomParticipants.find(id => id !== authorUserId);
+    console.log(`[MessageService] Sala: ${room}, Autor: ${authorUserId}, Destinatario: ${toUserId}`);
 
     if (!toUserId) {
       // Esto no debería pasar si la sala está bien formada y el authorUserId es uno de los participantes
       console.error(`Error: No se pudo determinar el destinatario para la sala ${room} y el autor ${authorUserId}`);
       throw new Error('Invalid room or author ID for message creation.');
     }
-
+    
+    console.log(`[MessageService] Creando nueva entidad ChatMessage...`);
     const newMessage = this.messageRepository.create({
       from_user_id: authorUserId,
       to_user_id: toUserId,
@@ -35,7 +38,9 @@ export class MessageService {
       message_text: text,
       is_read: false, // Por defecto, el mensaje no ha sido leído
     });
+    console.log(`[MessageService] Entidad creada:`, newMessage);
 
+    console.log(`[MessageService] Guardando mensaje en la base de datos...`);
     const savedMessage = await this.messageRepository.save(newMessage);
 
     // Devolvemos un objeto que el frontend entienda

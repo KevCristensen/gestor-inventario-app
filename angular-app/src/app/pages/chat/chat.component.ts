@@ -95,11 +95,11 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         id: h.id,
         text: h.content, // Renombramos 'content' a 'text'
         room: this.currentRoom!,
+        authorUserId: h.from_user_id, // Añadimos la propiedad que faltaba
+        entityId: h.entity_id,         // Añadimos la propiedad que faltaba
         // Para el historial, el authorId no es el socket.id, sino el user.id
         // Usaremos un prefijo para diferenciarlo y poder aplicar estilos.
         authorId: `user_${h.from_user_id}`,
-        authorUserId: h.from_user_id, // ¡Añadido!
-        entityId: h.entity_id,         // ¡Añadido!
         createdAt: new Date(h.created_at)
       }));
       this.cdr.detectChanges();
@@ -118,8 +118,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     const messageDto = {
       text: this.newMessage,
       room: this.currentRoom!,
-      authorUserId: this.currentUser!.id,   // ¡Añadido!
-      entityId: this.currentUser!.entity_id // ¡Añadido!
+      authorUserId: this.currentUser!.id,
+      entityId: this.currentUser!.entity_id
     };
 
     // --- ACTUALIZACIÓN OPTIMISTA ---
@@ -128,9 +128,9 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       id: Date.now(), // ID temporal
       text: this.newMessage,
       room: this.currentRoom,
+      authorUserId: this.currentUser!.id,   // Añadimos la propiedad que faltaba
+      entityId: this.currentUser!.entity_id, // Añadimos la propiedad que faltaba
       authorId: this.chatService.getCurrentSocketId(), // ¡Nos identificamos como el autor!
-      authorUserId: this.currentUser!.id,   // ¡Añadido!
-      entityId: this.currentUser!.entity_id, // ¡Añadido!
       createdAt: new Date()
     };
     this.messages.push(optimisticMessage);

@@ -16,7 +16,7 @@ import { SocketIoModule, SocketIoConfig } from 'ngx-socket-io';
 // --- ¡NUEVA CONFIGURACIÓN! ---
 // Apunta a tu nuevo backend de NestJS en el puerto 3001 y al namespace 'chat'.
 const config: SocketIoConfig = { 
-  url: 'http://localhost:3001', 
+  url: 'http://localhost:3001/chat', // El namespace se añade a la URL
   options: {} 
 };
 

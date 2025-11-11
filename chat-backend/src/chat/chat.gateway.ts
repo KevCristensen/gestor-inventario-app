@@ -49,7 +49,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() createMessageDto: CreateMessageDto,
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
-    const message = await this.messageService.create(createMessageDto, client); // Pasamos el DTO completo y el cliente
-    this.server.to(createMessageDto.room).emit('message', message);
+    console.log(`[ChatGateway] Recibido 'createMessage' de ${client.id}. DTO:`, createMessageDto);
+    try {
+      const message = await this.messageService.create(createMessageDto, client);
+      console.log(`[ChatGateway] Mensaje guardado y procesado:`, message);
+      this.server.to(createMessageDto.room).emit('message', message);
+      console.log(`[ChatGateway] Mensaje emitido a la sala '${createMessageDto.room}'.`);
+    } catch (error) {
+      console.error(`[ChatGateway] Error al procesar mensaje de ${client.id}:`, error);
+    }
   }
 }

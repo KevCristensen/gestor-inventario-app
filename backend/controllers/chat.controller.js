@@ -1,4 +1,5 @@
 const db = require('../db');
+const log = require('electron-log'); // Importar electron-log para logs detallados
 
 /**
  * Obtiene todos los usuarios, excluyendo al usuario actual.
@@ -7,7 +8,7 @@ exports.getUsers = async (req, res) => {
   try {
     const [users] = await db.query('SELECT id, name, role, entity_id FROM users WHERE is_active = 1');
     res.json(users);
-  } catch (error) {
+  } catch (error) { // Usar log.error para errores críticos
     console.error('Error al obtener usuarios para el chat:', error);
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
@@ -27,7 +28,7 @@ exports.getConversation = async (req, res) => {
        ORDER BY m.created_at ASC`,
       [userId1, userId2, userId2, userId1]
     );
-    res.json(messages);
+    res.json(messages); // Asegúrate de que entity_id se incluye aquí si lo necesitas en el frontend
   } catch (error) {
     console.error('Error al obtener la conversación:', error);
     res.status(500).json({ error: 'Error interno del servidor.' });
@@ -40,15 +41,17 @@ exports.getConversation = async (req, res) => {
 exports.postMessage = async (req, res) => {
   const { from_user_id, to_user_id, content, entity_id } = req.body;
   try {
+    log.info(`[Express] Intentando guardar mensaje: from_user_id=${from_user_id}, to_user_id=${to_user_id}, content=${content}, entity_id=${entity_id}`);
     const [result] = await db.query(
       'INSERT INTO chat_messages (from_user_id, to_user_id, message_text, entity_id) VALUES (?, ?, ?, ?)',
       [from_user_id, to_user_id, content, entity_id]
     );
     // Devolvemos el mensaje completo para poder reenviarlo por socket si es necesario
     const [message] = await db.query(`
-      SELECT id, from_user_id, to_user_id, message_text AS content, created_at, entity_id, is_read
+      SELECT id, from_user_id, to_user_id, entity_id, message_text AS content, created_at, is_read
       FROM chat_messages WHERE id = ?`,
       [result.insertId]);
+    log.info(`[Express] Mensaje guardado con ID: ${result.insertId}`);
     res.status(201).json(message[0]);
   } catch (error) {
     console.error('Error al guardar el mensaje:', error);
@@ -66,7 +69,7 @@ exports.getUnreadCount = async (req, res) => {
       'SELECT COUNT(id) as count FROM chat_messages WHERE to_user_id = ? AND is_read = 0',
       [userId]
     );
-    res.json({ count: rows[0].count });
+    res.json({ count: rows[0].count }); // Asegúrate de que rows[0] existe
   } catch (error) {
     console.error('Error al obtener mensajes no leídos:', error);
     res.status(500).json({ error: 'Error interno del servidor.' });
@@ -77,12 +80,14 @@ exports.getUnreadCount = async (req, res) => {
 exports.markAsRead = async (req, res) => { // Renombrado a 'markAsRead'
     const { to_user_id, from_user_id } = req.body;
     try {
+        log.info(`[Express] Intentando marcar como le\xEDdo: to_user_id=${to_user_id}, from_user_id=${from_user_id}`);
         await db.query(
             'UPDATE chat_messages SET is_read = 1 WHERE to_user_id = ? AND from_user_id = ? AND is_read = 0',
             [to_user_id, from_user_id]
         );
+        log.info(`[Express] Mensajes marcados como le\xEDdos para to_user_id=${to_user_id}, from_user_id=${from_user_id}`);
         res.status(200).json({ message: 'Messages marked as read' });
-    } catch (error) {
+    } catch (error) { // Usar log.error para errores críticos
         res.status(500).json({ error: 'Error marking messages as read.' });
     }
 };
