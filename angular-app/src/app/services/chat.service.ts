@@ -16,6 +16,7 @@ export interface Message {
   entityId: number;     // Añadido
   authorId: string; // El ID del socket del autor
   createdAt: Date;
+  tempId?: number; // Añadido: ID temporal para actualizaciones optimistas
 }
 
 

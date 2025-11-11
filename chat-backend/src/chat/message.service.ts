@@ -13,8 +13,8 @@ export class MessageService {
   ) {}
 
   async create(createMessageDto: CreateMessageDto, client: Socket) {
-    console.log(`[MessageService] Iniciando creaci\xF3n de mensaje. DTO:`, createMessageDto);
-    const { room, text, authorUserId, entityId } = createMessageDto; // Ahora recibimos authorUserId y entityId del DTO
+    console.log(`[MessageService] Iniciando creación de mensaje. DTO:`, createMessageDto);
+    const { room, text, authorUserId, entityId, tempId } = createMessageDto; // Destructuramos tempId
 
     // Extraemos los IDs de usuario de la sala.
     // Asumimos que la sala es siempre 'ID1_ID2' donde ID1 < ID2
@@ -50,6 +50,7 @@ export class MessageService {
       room: room,
       text: savedMessage.message_text,
       createdAt: savedMessage.created_at, // Aseguramos que la fecha esté en el formato correcto
+      tempId: tempId, // Devolvemos el tempId si se proporcionó
     };
   }
 }

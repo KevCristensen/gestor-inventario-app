@@ -3,4 +3,5 @@ export class CreateMessageDto {
   room: string;
   authorUserId: number;
   entityId: number;
+  tempId?: number; // Añadimos tempId opcional
 }

@@ -52,12 +52,35 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     
     // Nos suscribimos al observable que nos traerá los nuevos mensajes en tiempo real.
     this.newMessageSub = this.chatService.getNewMessage().subscribe((message: Message) => {
+      console.log(`[ChatComponent] Mensaje recibido en tiempo real:`, message);
+      console.log(`[ChatComponent] currentRoom: ${this.currentRoom}, message.room: ${message.room}`);
+
       // Solo añadimos el mensaje si pertenece a la sala que tenemos abierta.
       if (message.room === this.currentRoom) {
         this.zone.run(() => {
-          this.messages.push(message);
+          // Si el mensaje recibido tiene un tempId y su autor somos nosotros,
+          // significa que es la confirmación de un mensaje optimista.
+          if (message.tempId && message.authorId === this.chatService.getCurrentSocketId()) {
+            const existingOptimisticIndex = this.messages.findIndex(
+              m => m.tempId === message.tempId && m.authorId === message.authorId
+            );
+
+            if (existingOptimisticIndex > -1) {
+              // Reemplazamos el mensaje optimista con el mensaje real del backend
+              this.messages[existingOptimisticIndex] = message;
+            } else {
+              // Si no encontramos el optimista (caso raro), lo añadimos de todas formas
+              this.messages.push(message);
+            }
+          } else {
+            // Es un mensaje de otro usuario o un mensaje nuestro sin tempId (ej. del historial)
+            this.messages.push(message);
+          }
           this.cdr.detectChanges();
+          this.scrollToBottom(); // Aseguramos el scroll después de añadir/reemplazar
         });
+      } else {
+        console.log(`[ChatComponent] Mensaje para otra sala (${message.room}), ignorado. Sala actual: ${this.currentRoom}`);
       }
     });
   }
@@ -115,31 +138,34 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   sendMessage(): void {
     if (!this.newMessage.trim() || !this.currentRoom) return;
 
+
     const messageDto = {
+      // Generamos un ID temporal para el mensaje optimista
+      tempId: Date.now(),
       text: this.newMessage,
       room: this.currentRoom!,
       authorUserId: this.currentUser!.id,
       entityId: this.currentUser!.entity_id
     };
 
+
     // --- ACTUALIZACIÓN OPTIMISTA ---
     // Añadimos el mensaje a la UI inmediatamente, sin esperar al backend.
+    // Usamos el tempId como ID inicial para poder identificarlo y reemplazarlo después.
     const optimisticMessage: Message = {
-      id: Date.now(), // ID temporal
+      id: messageDto.tempId, // Usamos el tempId como ID inicial
       text: this.newMessage,
       room: this.currentRoom,
       authorUserId: this.currentUser!.id,   // Añadimos la propiedad que faltaba
       entityId: this.currentUser!.entity_id, // Añadimos la propiedad que faltaba
       authorId: this.chatService.getCurrentSocketId(), // ¡Nos identificamos como el autor!
-      createdAt: new Date()
+      createdAt: new Date(),
+      tempId: messageDto.tempId // Guardamos el tempId para la comparación
     };
     this.messages.push(optimisticMessage);
 
     // Enviamos el mensaje a través del servicio, que lo emitirá por socket.
     this.chatService.sendMessage(messageDto);
-
-    // Opcional: Guardar en la BD a través de la API REST (si aún es necesario)
-    // this.http.post(...)
 
     this.newMessage = ''; // Limpiamos el input
     this.cdr.detectChanges();
