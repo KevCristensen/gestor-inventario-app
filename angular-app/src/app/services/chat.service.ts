@@ -1,6 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap, filter } from 'rxjs';
+import { Observable, BehaviorSubject, tap, filter, Subject } from 'rxjs';
 import { Socket } from 'ngx-socket-io';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
@@ -34,6 +34,9 @@ export class ChatService {
   private unreadCountSubject = new BehaviorSubject<number>(0);
   public unreadCount$ = this.unreadCountSubject.asObservable();
 
+  // --- ¡LA SOLUCIÓN ESTÁ AQUÍ! ---
+  // 1. Creamos un Subject para actuar como un bus de eventos de mensajes.
+  private newMessageSubject = new Subject<Message>();
 
   constructor(
     // Inyectamos el socket que ya está configurado en app.config.ts para apuntar al backend de NestJS.
@@ -47,6 +50,19 @@ export class ChatService {
       console.log('(Angular-Frontend) Conectado al servidor de chat NestJS con ID:', this.socket.ioSocket.id);
       // Cuando nos conectamos (o reconectamos), pedimos el contador de no leídos.
       this.fetchUnreadCount();
+    });
+
+    // 2. Nos suscribimos UNA SOLA VEZ al evento 'message' del socket.
+    // Esta es la única parte de la aplicación que escucha directamente al socket.
+    this.socket.fromEvent<Message>('message').subscribe(message => {
+      console.log(`[ChatService] Mensaje recibido del socket:`, message);
+      // 3. Retransmitimos el mensaje a través de nuestro Subject a todos los suscriptores.
+      this.newMessageSubject.next(message);
+
+      // 4. Actualizamos el contador de no leídos si el chat no está abierto.
+      if (!this.isChatOpenSubject.value) {
+        this.unreadCountSubject.next(this.unreadCountSubject.value + 1);
+      }
     });
   }
 
@@ -76,15 +92,8 @@ export class ChatService {
 
   // Escucha los nuevos mensajes que llegan a la sala.
   getNewMessage(): Observable<Message> {
-    // Devolvemos directamente el observable del evento del socket.
-    // Y añadimos la lógica para actualizar el contador de no leídos aquí.
-    return this.socket.fromEvent<Message>('message').pipe(
-      tap(() => {
-        if (!this.isChatOpenSubject.value) {
-          this.unreadCountSubject.next(this.unreadCountSubject.value + 1);
-        }
-      })
-    );
+    // 5. Los componentes se suscribirán a nuestro Subject, no directamente al socket.
+    return this.newMessageSubject.asObservable();
   }
 
   // Obtiene el ID del socket actual para saber si un mensaje es nuestro.
