@@ -1,7 +1,7 @@
   <!-- Contenedor principal con animación de entrada -->
 <div class="text-white" style="animation: fade-in-up 0.7s ease-out forwards;">
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">Dashboard</h1>
+    <h1 class="text-2xl font-bold">Dashboard</h1>
     
     <div class="flex items-center space-x-4 text-sm">
 
@@ -20,50 +20,130 @@
   </div>
 
     <!-- Tarjetas de Resumen -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
     <!-- Tarjeta Total de Productos -->
-    <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-xl shadow-lg border border-gray-700/50 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300">
+    <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
       <div class="flex justify-between items-start">
         <h3 class="text-gray-400 text-sm font-medium">Total de Productos</h3>
         <span class="text-blue-500">🍎</span>
       </div>
-      <p class="text-4xl font-bold mt-2">{{ displayProducts | number }}</p>
+      <p class="text-2xl font-bold mt-2">{{ displayProducts | number }}</p>
     </div>
 
     <!-- Tarjeta Total de Proveedores -->
-    <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-xl shadow-lg border border-gray-700/50 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-green-500/10 transition-all duration-300">
+    <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
       <div class="flex justify-between items-start">
         <h3 class="text-gray-400 text-sm font-medium">Total de Proveedores</h3>
         <span class="text-green-500">🧑‍🌾</span>
       </div>
-      <p class="text-4xl font-bold mt-2">{{ displayProviders | number }}</p>
+      <p class="text-2xl font-bold mt-2">{{ displayProviders | number }}</p>
     </div>
+
+    <!-- --- ¡MODIFICADO! Tarjeta de Stock para la bodega del usuario actual --- -->
+    @if(currentUserDailySummary) {
+      <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
+        <div class="flex justify-between items-start">
+          <h3 class="text-gray-400 text-sm font-medium truncate" [title]="'Stock ' + currentUserDailySummary.entityName">Stock {{ currentUserDailySummary.entityName }}</h3>
+          <span class="text-purple-400">🏛️</span>
+        </div>
+        <!-- Buscamos el stock correspondiente en el array stockByEntity -->
+        @for(entity of summary.stockByEntity; track entity.entity_name) {
+          @if(entity.entity_name === currentUserDailySummary.entityName) {
+            <p class="text-2xl font-bold mt-2">{{ displayStockByEntity[entity.entity_name] | number }}</p>
+          }
+        }
+      </div>
+    }
+
+    <!-- --- ¡NUEVO! Tarjetas de resumen para la bodega del usuario actual --- -->
+    @if(currentUserDailySummary) {
+      <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
+        <div class="flex justify-between items-start">
+          <h3 class="text-gray-400 text-sm font-medium truncate" [title]="'Entradas Hoy (' + currentUserDailySummary.entityName + ')'">Entradas Hoy ({{ currentUserDailySummary.entityName }})</h3>
+          <span class="text-cyan-400">📥</span>
+        </div>
+        <p class="text-2xl font-bold mt-2">{{ currentUserDailySummary.todayEntries | number }}</p>
+      </div>
+      <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
+        <div class="flex justify-between items-start">
+          <h3 class="text-gray-400 text-sm font-medium truncate" [title]="'Salidas Hoy (' + currentUserDailySummary.entityName + ')'">Salidas Hoy ({{ currentUserDailySummary.entityName }})</h3>
+          <span class="text-orange-400">📤</span>
+        </div>
+        <p class="text-2xl font-bold mt-2">{{ currentUserDailySummary.todayExits | number }}</p>
+      </div>
+    }
   </div>
 
+  <!-- --- ¡NUEVO! Sección plegable para otros colegios (solo si hay datos) --- -->
+  @if (otherCollegesDailySummaries.length > 0) {
+    <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-700/50 mb-8">
+      <div class="flex justify-between items-center cursor-pointer" (click)="toggleOtherCollegesSection()">
+        <h2 class="text-xl font-bold text-white">Resumen Otros Colegios</h2>
+        <svg class="w-6 h-6 text-gray-400 transition-transform duration-300" [ngClass]="{'rotate-180': isOtherCollegesCollapsed}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+      </div>
 
-    <!-- Alertas de Stock Bajo -->
-
-  <div class="space-y-8">
-    @for (entityName of getObjectKeys(groupedLowStockItems); track entityName) {
-      <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-700/50">
-        <h2 class="text-2xl font-bold mb-6 text-yellow-400 border-b border-yellow-500/20 pb-3">
-          Alertas de Stock Bajo - {{ entityName }}
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          @for (item of groupedLowStockItems[entityName]; track item.id; let i = $index) {
-            <!-- Tarjeta de Alerta con animación escalonada -->
-            <div class="bg-gray-700/80 p-4 rounded-lg border-l-4 border-yellow-500 opacity-0"
-                 style="animation: card-enter 0.5s ease-out forwards;" [style.animation-delay]="i * 100 + 'ms'">
-              <p class="font-bold text-lg">{{ item.name }}</p>
-              <p class="text-sm text-gray-400">{{ item.barcode }}</p>
-              <div class="mt-4 text-center">
-                <span class="text-3xl font-bold text-red-500">{{ item.current_stock }}</span>
-                <span class="text-gray-400"> / {{ item.min_stock_level }} (mín)</span>
-
+      @if (!isOtherCollegesCollapsed) {
+        <!-- --- ¡NUEVA ESTRUCTURA POR COLUMNAS! --- -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+          @for(daily of otherCollegesDailySummaries; track daily.id) {
+            <div class="bg-gray-900/50 p-4 rounded-lg space-y-3">
+              <h3 class="text-lg font-bold text-center text-blue-400 border-b border-gray-700 pb-2">{{ daily.entityName }}</h3>
+              
+              <!-- Stock Total -->
+              @for(entity of summary.stockByEntity; track entity.entity_name) {
+                @if(entity.entity_name === daily.entityName) {
+                  <div class="flex justify-between items-center bg-gray-800 p-2 rounded-md">
+                    <span class="text-sm font-semibold text-gray-300">Stock Total</span>
+                    <span class="font-mono text-lg">{{ displayStockByEntity[entity.entity_name] | number }}</span>
+                  </div>
+                }
+              }
+              <!-- Entradas Hoy -->
+              <div class="flex justify-between items-center bg-gray-800 p-2 rounded-md">
+                <span class="text-sm font-semibold text-gray-300">Entradas Hoy</span>
+                <span class="font-mono text-lg text-green-400">{{ daily.todayEntries | number }}</span>
               </div>
+              <!-- Salidas Hoy -->
+              <div class="flex justify-between items-center bg-gray-800 p-2 rounded-md">
+                <span class="text-sm font-semibold text-gray-300">Salidas Hoy</span>
+                <span class="font-mono text-lg text-red-400">{{ daily.todayExits | number }}</span>
+                </div>
             </div>
           }
         </div>
+      }
+    </div>
+  }
+
+
+    <!-- Alertas de Stock Bajo -->
+  <div class="space-y-8">
+    @for (entityName of getObjectKeys(groupedLowStockItems); track entityName) {
+      <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-700/50">
+        <!-- --- ¡NUEVO ENCABEZADO PLEGABLE! --- -->
+        <div class="flex justify-between items-center cursor-pointer mb-4" (click)="toggleLowStockSection(entityName)">
+          <h2 class="text-xl font-bold text-yellow-400">
+            Alertas de Stock Bajo - {{ entityName }} ({{ groupedLowStockItems[entityName].length }})
+          </h2>
+          <svg class="w-6 h-6 text-gray-400 transition-transform duration-300" [ngClass]="{'rotate-180': collapsedSections[entityName]}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </div>
+        
+        <!-- --- ¡NUEVO CONTENEDOR PLEGABLE! --- -->
+        @if (!collapsedSections[entityName]) {
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            @for (item of groupedLowStockItems[entityName]; track item.id; let i = $index) {
+              <div class="bg-gray-700/80 p-4 rounded-lg border-l-4 border-yellow-500 flex flex-col opacity-0"
+                   style="animation: card-enter 0.5s ease-out forwards;" [style.animation-delay]="i * 80 + 'ms'">
+                <h3 class="text-base font-semibold text-white truncate" [title]="item.name">{{ item.name }}</h3>
+                <p class="text-sm text-gray-400">{{ item.barcode }}</p>
+                <div class="mt-2 text-xs space-y-1">
+                  <p><span class="font-semibold text-gray-300">Mín:</span> {{ item.min_stock_level }}</p>
+                  <p><span class="font-bold text-red-400">Actual:</span> {{ item.current_stock }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        }
       </div>
     } @empty {
       <div class="bg-gray-800 rounded-lg shadow p-8 text-center text-gray-400">

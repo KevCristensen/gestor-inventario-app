@@ -168,11 +168,15 @@ export class ReportsComponent implements OnInit {
         entityNameToPrint = selectedEntity.name;
       }
     }
+
+    const currentUser = this.authService.getCurrentUser(); // 1. Obtenemos el usuario actual
+
     const printData = {
       reportTitle: `Reporte Consolidado de Salidas`,
       dateRange: { start: this.startDate, end: this.endDate },
       entityName: entityNameToPrint,
       groups: this.exitGroups,
+      generatedBy: currentUser?.name || 'Usuario del Sistema' // 2. Añadimos el nombre del usuario
     };
     window.electronAPI.send('print-consolidated-exit-report', printData);
   }

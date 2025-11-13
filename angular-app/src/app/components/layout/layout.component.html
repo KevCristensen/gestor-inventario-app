@@ -149,19 +149,4 @@
   <main class="flex-1 p-4 md:p-6 lg:p-10 overflow-y-auto">
     <router-outlet></router-outlet>
   </main>
-
-  <!-- --- ¡NUEVA SECCIÓN DE CHAT! --- -->
-  
-  <!-- La burbuja flotante siempre visible -->
-  <app-chat-bubble></app-chat-bubble>
-
-  <!-- La ventana de chat, que se muestra u oculta con ngClass -->
-  @if (isChatOpen$ | async) {
-    <!-- NUEVO: Backdrop para oscurecer el fondo -->
-    <div class="chat-backdrop" (click)="chatService.toggleChat()"></div>
-    <!-- La ventana de chat principal, ahora con la clase 'open' aplicada dinámicamente -->
-    <div class="chat-window-container" [ngClass]="{ 'open': (isChatOpen$ | async) }"> 
-      <app-chat></app-chat>
-    </div>
-  }
 </div>

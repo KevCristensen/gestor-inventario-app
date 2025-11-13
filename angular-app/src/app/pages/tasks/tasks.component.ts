@@ -2,11 +2,11 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TasksService } from '../../services/tasks.service';
-import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router'; // Re-añadir AuthService y User
 import { AuthService, User } from '../../services/auth.service';
-import { ChatService } from '../../services/chat.service'; // Reutilizamos para obtener usuarios
 import { ProductsService } from '../../services/products.service';
 import { DishesService, Dish } from '../../services/dishes.service';
+import { UsersService } from '../../services/users.service'; // Importamos el nuevo servicio
 import { finalize } from 'rxjs';
 import { NotificationService } from '../../services/notification.service';
 
@@ -53,6 +53,7 @@ export class TasksComponent implements OnInit {
   // Listas para los selectores del formulario
   allUsers: any[] = [];
   allProducts: any[] = [];
+  currentUser: User | null; // <-- 1. Volvemos a declarar la propiedad
   allDishes: Dish[] = [];
 
   // Para añadir productos a la tarea
@@ -65,14 +66,15 @@ export class TasksComponent implements OnInit {
   constructor(
     private tasksService: TasksService,
     private authService: AuthService,
-    private chatService: ChatService,
     private productsService: ProductsService,
     private dishesService: DishesService,
+    private usersService: UsersService, // Inyectamos el nuevo servicio
     private notificationService: NotificationService,
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
     private router: Router
   ) {
+    this.currentUser = this.authService.getCurrentUser(); // <-- 3. Volvemos a inicializar currentUser
     const today = new Date();
     // Formato YYYY-MM para el input month
     this.selectedMonth = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -121,12 +123,7 @@ export class TasksComponent implements OnInit {
 
   loadUsersAndProducts(): void {
     const currentUser = this.authService.getCurrentUser();
-    if (currentUser?.entity_id) {
-      // Obtenemos todos los usuarios y filtramos los del mismo colegio
-      this.chatService.getUsers().subscribe(users => {
-        this.allUsers = users.filter(u => u.entity_id === currentUser.entity_id);
-      });
-    }
+    
     // Obtenemos todos los productos para el selector
     this.productsService.getAllProducts().subscribe(products => {
       this.allProducts = products;
@@ -134,6 +131,14 @@ export class TasksComponent implements OnInit {
     // Cargamos todos los platillos disponibles
     this.dishesService.getAllDishes().subscribe(dishes => {
       this.allDishes = dishes;
+    });
+
+    // Cargar usuarios para la asignación usando el nuevo servicio
+    this.usersService.getUsers().subscribe(users => {
+      // Añadimos una comprobación para asegurarnos de que currentUser no es null
+      if (this.currentUser) { 
+        this.allUsers = users.filter(u => u.entity_id === this.currentUser!.entity_id);
+      } 
     });
   }
 
@@ -316,23 +321,21 @@ export class TasksComponent implements OnInit {
 
     operation
       .pipe(
-        finalize(() => {
-          this.isSaving = false;
-          this.cdr.detectChanges(); // Forzamos la detección de cambios aquí
-        })
+        // El bloque finalize se ejecuta tanto en éxito como en error.
+        // Es el lugar perfecto para resetear el estado de 'isSaving'.
+        finalize(() => this.isSaving = false)
       )
       .subscribe({
         next: () => {
-          this.notificationService.showSuccess(`Pauta ${this.editingTaskId ? 'actualizada' : 'creada'} exitosamente.`);          
-          // Movemos el cierre del modal y la recarga de tareas a un setTimeout
-          // para asegurar que ocurran en el siguiente ciclo de detección de cambios,
-          // evitando el error ExpressionChangedAfterItHasBeenCheckedError.
+          // Agrupamos todas las actualizaciones de estado en un solo setTimeout
+          // para que se ejecuten en un nuevo ciclo de detección de cambios.
           setTimeout(() => {
+            this.notificationService.showSuccess(`Pauta ${this.editingTaskId ? 'actualizada' : 'creada'} exitosamente.`);
             this.closeModal();
             this.loadTasks();
           }, 0);
         },
-        error: (err) => this.notificationService.showError(err.error?.error || `Error al ${this.editingTaskId ? 'actualizar' : 'crear'} la pauta.`)
+        error: (err) => this.notificationService.showError(err.error?.error || `Error al ${this.editingTaskId ? 'actualizar' : 'crear'} la pauta.`),
       });
   }
 
@@ -359,9 +362,14 @@ export class TasksComponent implements OnInit {
     event.preventDefault(); // Evita la navegación al hacer clic en el botón
     event.stopPropagation(); // Detiene la propagación del clic
     if (confirm('¿Estás seguro de que quieres eliminar esta pauta?')) {
-      this.tasksService.deleteTask(taskId).subscribe(() => {
-        this.notificationService.showSuccess('Pauta eliminada correctamente.');
-        this.loadTasks();
+      this.tasksService.deleteTask(taskId).subscribe({
+        next: () => {
+          // Agrupamos la notificación y la recarga en un solo setTimeout.
+          setTimeout(() => {
+            this.notificationService.showSuccess('Pauta eliminada correctamente.');
+            this.loadTasks();
+          }, 0);
+        },
       });
     }
   }

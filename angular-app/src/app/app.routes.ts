@@ -17,7 +17,6 @@ import { AssetMovementsComponent } from './pages/asset-movements/asset-movements
 import { AssetInventoryComponent } from './pages/asset-inventory/asset-inventory.component';
 import { ProductLookupComponent } from './pages/product-lookup/product-lookup.component';
 import { LossDamageReportComponent } from './pages/loss-damage-report/loss-damage-report.component';
-import { ChatComponent } from './pages/chat/chat.component';
 import { DishesComponent } from './pages/dishes/dishes.component';
 
 

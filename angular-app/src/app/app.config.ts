@@ -7,18 +7,7 @@ import { provideRouter, withHashLocation } from '@angular/router';
 import { provideToastr } from 'ngx-toastr';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { routes } from './app.routes';
-import { authInterceptor } from './interceptors/auth.interceptor'; 
-import { SocketIoModule, SocketIoConfig } from 'ngx-socket-io';
-
-
-
-
-// --- ¡NUEVA CONFIGURACIÓN! ---
-// Apunta a tu nuevo backend de NestJS en el puerto 3001 y al namespace 'chat'.
-const config: SocketIoConfig = { 
-  url: 'http://localhost:3001/chat', // El namespace se añade a la URL
-  options: {} 
-};
+import { authInterceptor } from './interceptors/auth.interceptor';
 
 
 // Registramos el locale español
@@ -31,7 +20,6 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(), provideClientHydration(withEventReplay()),
     // 2. Añade el proveedor de HttpClient aquí
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
-    importProvidersFrom(SocketIoModule.forRoot(config)), // Añadimos el proveedor del socket
 
     provideAnimations(), // Requerido para las animaciones de ngx-toastr
     provideToastr({      // Configuración de las notificaciones

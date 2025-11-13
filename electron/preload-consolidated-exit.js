@@ -8,13 +8,16 @@ contextBridge.exposeInMainWorld('api', {
 
 window.addEventListener('DOMContentLoaded', () => {
   ipcRenderer.on('consolidated-exit-data', (event, data) => {
-    const { reportTitle, dateRange, entityName, groups } = data;
+    // ¡MODIFICADO! Extraemos el nombre del usuario que genera el reporte.
+    const { reportTitle, dateRange, entityName, groups, generatedBy } = data;
 
     // Poblar el encabezado
     document.getElementById('report-title').textContent = reportTitle || 'Reporte de Salidas';
     document.getElementById('entity-name').innerHTML = `<strong>Bodega:</strong> ${entityName || 'Todas'}`;
     document.getElementById('date-range').innerHTML = `<strong>Período:</strong> ${formatDate(dateRange.start)} al ${formatDate(dateRange.end)}`;
     document.getElementById('generation-date').textContent = new Date().toLocaleDateString('es-CL');
+    // ¡NUEVO! Añadimos el nombre del usuario que generó el reporte en la firma.
+    document.getElementById('generated-by-name').textContent = generatedBy || 'Usuario del Sistema';
     
     // Poblar los grupos de salidas
     const container = document.getElementById('groups-container');
@@ -22,6 +25,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     if (groups && groups.length > 0) {
       groups.forEach(group => {
+        // ¡NUEVO! Calculamos el total de items por grupo.
+        const totalItemsInGroup = group.items.reduce((sum, item) => sum + item.quantity, 0);
+
         const groupDiv = document.createElement('div');
         groupDiv.className = 'group';
 
@@ -36,14 +42,25 @@ window.addEventListener('DOMContentLoaded', () => {
           <div class="group-header">
             <div>
               <h2>${group.notes || 'Salida sin motivo'}</h2>
-              <p class="group-meta">Por: ${group.user_name}</p>
+              <p class="group-meta">Realizado por: ${group.user_name}</p>
             </div>
-            <p class="group-meta">${formatTimestamp(group.timestamp)}</p>
+            <div class="group-meta">
+              <p>${formatTimestamp(group.timestamp)}</p>
+              <p><strong>Total Items: ${totalItemsInGroup}</strong></p>
+            </div>
           </div>
           <ul>${itemsHtml}</ul>
         `;
         container.appendChild(groupDiv);
       });
+
+      // ¡NUEVO! Calculamos y mostramos el total general de unidades.
+      const grandTotalQuantity = groups.reduce((total, group) => 
+        total + group.items.reduce((groupSum, item) => groupSum + item.quantity, 0), 
+        0
+      );
+      document.getElementById('grand-total-quantity').textContent = grandTotalQuantity.toLocaleString('es-CL');
+
     } else {
       container.innerHTML = '<p style="text-align:center; color: #888;">No se encontraron salidas para este período.</p>';
     }

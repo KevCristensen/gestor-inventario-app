@@ -3,18 +3,15 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { AuthService, User } from '../../services/auth.service';
 import { EntitiesService } from '../../services/entities.service';
 import { ConnectionService } from '../../services/connection.service';
-import { ChatService } from '../../services/chat.service'; // 1. Importar ChatService
 import { Observable, filter, switchMap, of, catchError, map } from 'rxjs';
 import { CommonModule } from '@angular/common'; 
 import { FormsModule } from '@angular/forms';
-import { ChatBubbleComponent } from '../../shared/components/chat-bubble/chat-bubble.component'; // 2. Importar la burbuja
-import { ChatComponent } from '../../pages/chat/chat.component'; // 3. Importar el componente de chat
 
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive, ChatBubbleComponent, ChatComponent], // 4. Añadir los componentes
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss'] // ¡AÑADIR ESTA LÍNEA!
 })
@@ -23,7 +20,6 @@ export class LayoutComponent implements OnInit {
   isOnline$: Observable<boolean>;
   entityName$: Observable<string>;
   isSidebarCollapsed = false; // Estado para el menú lateral
-  isChatOpen$: Observable<boolean>; // 5. Observable para el estado del chat
 
 
   constructor(
@@ -31,8 +27,7 @@ export class LayoutComponent implements OnInit {
     private entitiesService: EntitiesService, 
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private connectionService: ConnectionService,
-    public chatService: ChatService // 6. Inyectar ChatService
+    private connectionService: ConnectionService
   ) {
     this.currentUser$ = this.authService.currentUser;
     this.isOnline$ = this.connectionService.isOnline$;
@@ -49,9 +44,6 @@ export class LayoutComponent implements OnInit {
       }),
       map((entity: { name: string }) => entity.name) // Extraemos la propiedad 'name' del objeto entidad
     );
-
-    // 7. Nos suscribimos al estado del chat desde el servicio
-    this.isChatOpen$ = this.chatService.isChatOpen$;
   }
 
   ngOnInit(): void {}
