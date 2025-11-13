@@ -63,7 +63,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
           // significa que es la confirmación de un mensaje optimista.
           const isMyOwnConfirmedMessage = message.tempId && message.authorId === this.chatService.getCurrentSocketId();
           console.log(`[ChatComponent] Es mi propio mensaje confirmado (tempId: ${message.tempId}, authorId: ${message.authorId})? ${isMyOwnConfirmedMessage}`);
-
+          
           if (isMyOwnConfirmedMessage) {
             const existingOptimisticIndex = this.messages.findIndex(
               // Asegurarse de que el tempId y el authorId coincidan
@@ -86,7 +86,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
             // Es un mensaje de otro usuario o un mensaje nuestro sin tempId (ej. del historial)
             this.messages.push(message);
           }
-          this.cdr.detectChanges(); // Forzamos la detección de cambios para actualizar la UI
+          this.cdr.markForCheck(); // ¡LA SOLUCIÓN! Marcamos el componente para que se revise en el próximo ciclo.
           this.scrollToBottom(); // Aseguramos el scroll después de añadir/reemplazar
         });
       } else { // Este bloque else se ejecuta si message.room !== this.currentRoom
