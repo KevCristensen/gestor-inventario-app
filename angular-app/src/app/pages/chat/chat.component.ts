@@ -73,23 +73,20 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
             if (existingOptimisticIndex > -1) {
               // Reemplazamos el mensaje optimista con el mensaje real del backend
-              console.log(`[ChatComponent] Reemplazando mensaje optimista en índice ${existingOptimisticIndex}.`);              
-              // Creamos un nuevo array con el mensaje reemplazado
-              const updatedMessages = [...this.messages];
-              updatedMessages[existingOptimisticIndex] = message;
-              this.messages = updatedMessages;
+              console.log(`[ChatComponent] Reemplazando mensaje optimista en índice ${existingOptimisticIndex}.`);
+              this.messages[existingOptimisticIndex] = message;
             } else {
               // Si no encontramos el optimista (esto no debería pasar si la lógica es correcta), lo añadimos de todas formas
               console.warn(`[ChatComponent] No se encontró mensaje optimista para reemplazar (tempId: ${message.tempId}). Añadiendo mensaje recibido.`);
-              this.messages = [...this.messages, message];
+              // Esto podría ocurrir si el mensaje optimista fue eliminado o si hay un desajuste en los IDs.
+              this.messages.push(message);
             }
           } else {
             console.log(`[ChatComponent] Añadiendo mensaje de otro usuario o sin tempId:`, message);
             // Es un mensaje de otro usuario o un mensaje nuestro sin tempId (ej. del historial)
-            this.messages = [...this.messages, message];
+            this.messages.push(message);
           }
-          // Ya no necesitamos forzar la detección de cambios, Angular lo hará automáticamente
-          // al detectar el cambio de referencia del array.
+          this.cdr.detectChanges(); // Volvemos a detectChanges() para forzar una actualización inmediata de la vista.
           this.scrollToBottom(); // Aseguramos el scroll después de añadir/reemplazar
         });
       } else { // Este bloque else se ejecuta si message.room !== this.currentRoom
